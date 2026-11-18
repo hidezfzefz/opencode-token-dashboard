@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <h1 class="page-title">Could not load token usage</h1>
+  <p class="page-subtitle">{{ message }}</p>
+  <p class="stat-meta">Check that the OpenCode database exists and is readable. Set OPENCODE_DB_PATH or pass --db-path to use a different file.</p>
+  <a class="btn btn-primary" href="/" style="margin-top:24px">Try again</a>
+</section>
+{% endblock content %}

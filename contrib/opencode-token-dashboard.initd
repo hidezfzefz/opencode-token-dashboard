@@ -1,0 +1,21 @@
+#!/sbin/openrc-run
+# Gentoo OpenRC service for opencode-token-dashboard.
+# Install to /etc/init.d/opencode-token-dashboard and edit the variables below.
+
+name="OpenCode token dashboard"
+description="Local dashboard for OpenCode token usage"
+
+command="/usr/local/bin/opencode-token-dashboard"
+command_args="--host 127.0.0.1 --port 3000"
+command_background="yes"
+pidfile="/run/${RC_SVCNAME}.pid"
+output_log="/var/log/${RC_SVCNAME}.log"
+error_log="/var/log/${RC_SVCNAME}.err"
+
+# The database is read as the user running the service. Set the real path:
+export OPENCODE_DB_PATH="/home/user/.local/share/opencode/opencode.db"
+
+depend() {
+    need net
+    after localmount
+}

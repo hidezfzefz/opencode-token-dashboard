@@ -11,22 +11,20 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v6
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          node-version: 24
-          cache: npm
+          components: rustfmt, clippy
 
-      - name: Install dependencies
-        run: npm ci
+      - uses: Swatinem/rust-cache@v2
 
-      - name: Lint
-        run: npm run lint
+      - name: Format
+        run: cargo fmt -- --check
 
-      - name: Type check
-        run: npx tsc --noEmit
+      - name: Clippy
+        run: cargo clippy --all-targets -- -D warnings
 
-      - name: Unit and integration tests
-        run: npm test
+      - name: Tests
+        run: cargo test
 
-      - name: Production build
-        run: npm run build
+      - name: Release build
+        run: cargo build --release

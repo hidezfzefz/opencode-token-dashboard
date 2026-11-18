@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">Sessions</h1>
+    <p class="page-subtitle">{{ session_count }} sessions with assistant messages</p>
+  </div>
+  <nav class="nav" aria-label="Session actions">
+    <a class="btn" href="/sessions.csv{% if query_string %}?{{ query_string }}{% endif %}">Export CSV</a>
+    <form action="/sessions" method="get">
+      {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+      <button type="submit" class="btn">Refresh</button>
+    </form>
+  </nav>
+</div>
+
+<form action="/sessions" method="get" style="margin-bottom:var(--space-4)">
+  <input class="input" type="search" name="q" value="{{ q }}" placeholder="Search sessions, models or projects" aria-label="Search sessions" style="max-width:420px">
+</form>
+
+<section class="card">
+  {% if rows %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          {% for column in columns %}
+          <th scope="col" {% if column.numeric %}class="num"{% endif %}><a href="{{ column.href }}" class="nav-link" style="padding:0">{{ column.label }}</a></th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td class="ellipsis" title="{{ row.label }}">{{ row.label }}</td>
+          <td class="num">{{ row.updated_at }}</td>
+          <td class="num">{{ row.input }}</td>
+          <td class="num">{{ row.output }}</td>
+          <td class="num">{{ row.reasoning }}</td>
+          <td class="num">{{ row.cache_read }}</td>
+          <td class="num">{{ row.fresh }}</td>
+          <td class="num">{{ row.total }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% elif total_sessions == 0 %}
+    <div class="empty">No sessions found in the database yet.</div>
+  {% else %}
+    <div class="empty">No sessions match this search. Try a different term.</div>
+  {% endif %}
+</section>
+{% endblock content %}

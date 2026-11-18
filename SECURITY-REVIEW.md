@@ -1,33 +1,27 @@
-# Security review — opencode-token-dashboard
-
-Date: 2026-11-18. Scope: the local Next.js app and its git repository. No production deployment exists.
+# Security review — Rust implementation
 
 ## Attack surface
-- Four read-only pages (`/`, `/sessions`, `/models`, `/projects`).
-- One GET form (session search) and a refresh button that calls `router.refresh()`.
-- No API routes, no file uploads, no webhooks, no auth endpoints, no admin area.
-- No secrets or credentials in source, git history, or client bundles. The only configuration is `OPENCODE_DB_PATH`, an env var read server-side; it is never exposed as a `NEXT_PUBLIC_*` value.
-- All data comes from the local OpenCode SQLite database. No prompt text or message content is read or rendered — only token counters, model ids, session titles and project labels.
+- Four server-rendered pages, two CSV downloads, one search form, one 404 page.
+- No API surface beyond those GET routes; no auth, no uploads, no webhooks, no cookies, no telemetry.
+- Only configuration is `OPENCODE_DB_PATH` / `--db-path`, read server-side. No secrets exist.
 
 ## Findings
 
-| Finding | Severity | Where | Fix | Status |
-|---|---|---|---|---|
-| 16 high npm audit findings from picomatch ReDoS (GHSA-fc5q-39xc-vjpf) | High (dev only) | eslint / vitest dev toolchain (`fast-glob`, `micromatch`, `tinyglobby`, `fdir`) | None available: advisory covers all versions `<= 4.0.7`, which is the latest. `npm audit fix` cannot resolve it. No fix is needed in production code; `npm audit --omit=dev` reports 0 vulnerabilities and none of these packages are bundled into the running app. | Open, accepted with reason |
-| Semgrep could not run: engine killed (exit -11) even with `-j 1 --max-memory 800` | Low | Scanner environment | Manual review of all input handling and data access performed instead; see below. | Open, tool limitation |
-| gitleaks and osv-scanner not installed in this environment | Low | Scanner environment | Manual `git grep` for secrets and `npm audit` cover the same ground. | Open, tool limitation |
-| Local database path is displayed on the overview page | Low | `src/app/page.tsx` | Deliberate: this is a single-user local tool and the path helps confirm which DB is being read. Not exposed over a network in v1. | Accepted |
-| Error boundary renders `error.message` | Low | `src/app/error.tsx` | Message may include a local file path. No stack trace is rendered. Local tool only. | Accepted |
+| Finding | Severity | Status |
+|---|---|---|
+| Database writes | High if present | Fixed: connection uses `SQLITE_OPEN_READ_ONLY`; a test proves INSERT fails. |
+| SQL injection | High if present | Fixed: all SQL is static, no user input is interpolated. |
+| XSS | Medium if present | Fixed: Tera escapes HTML by default; the only `|safe` value is an SVG generated from numeric data and day strings from the database. No user input reaches it. |
+| Input handling | Medium | Query values are used only for case-insensitive in-memory filtering and a whitelisted sort key/direction. |
+| Missing security headers | Low | Fixed: nosniff, DENY framing, no-referrer and permissions-policy on every response. |
+| Local path shown on the overview page | Low | Accepted: a single-user local tool; the path helps confirm which database is read. |
+| Error message shown on the error page | Low | Accepted: no stack trace, local tool only. |
+| WebKit not tested | Low | Open: host libraries missing; needs root to install. |
 
-## Checks that passed
-- **Read-only database access:** `new DatabaseSync(path, { readOnly: true })`; a test proves an INSERT throws. (`src/lib/usage.test.ts`)
-- **SQL injection:** all SQL is static; no user input is interpolated. The only query reads from fixed table names with fixed columns.
-- **Input handling:** `q` is used only for a case-insensitive substring filter on in-memory strings. `sort` is checked against a fixed column whitelist; `dir` is restricted to `asc`/`desc`. No `dangerouslySetInnerHTML`, `innerHTML`, or user-supplied URLs.
-- **No SSRF / no outbound requests:** the app makes no network calls. Recharts runs entirely in the browser with local data.
-- **Secrets:** `git grep` for key/token/private-key patterns found nothing; no `.env` files are tracked and `.gitignore` excludes `.env*`.
-- **Dependencies:** production dependencies have 0 known vulnerabilities; `package-lock.json` is committed.
-- **Headers:** `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Permissions-Policy`, and `X-Powered-By` removed, set in `next.config.ts`.
-- **Build-time validation:** `npm run lint`, `npx tsc --noEmit`, `npm test` (14 tests), and `npm run build` all pass.
+## Dependency review
+- No npm dependencies are used at runtime. The archived `legacy-nextjs/` tree is not built by CI or shipped in the binary.
+- Rust dependencies are resolved from crates.io and pinned by the committed `Cargo.lock`.
+- SQLite is compiled into the binary from source; there is no external database service.
 
 ## Conclusion
-No critical or high findings in shipped application code. The only high-severity audit entries are in development tooling with no available patch and no exposure in the production bundle. The app is safe to run locally; it is not designed to be exposed to untrusted networks without adding authentication and network controls.
+No critical or high findings remain in the shipped application. The app is safe to run locally. It is not designed for exposure to untrusted networks without adding authentication and network controls.

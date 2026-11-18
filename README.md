@@ -1,94 +1,123 @@
 # opencode-token-dashboard
 
-A local-first dashboard for [OpenCode](https://opencode.ai) token usage. It reads OpenCode's own SQLite database and shows today's and all-time totals, a daily usage chart, and breakdowns by session, model and project.
+A native Rust web app that reads OpenCode's SQLite database and shows token usage: today and all-time totals, per-day history, and breakdowns by session, model and project. It keeps the same website as the original implementation, but runs as a single small binary with **no Node.js runtime, npm, or network access required**.
 
-Nothing is uploaded, no account is needed, and the database is opened read-only.
+The previous Next.js implementation is preserved in `legacy-nextjs/` for reference. It is not needed to build or run the app.
 
 ## Requirements
 
-- Node.js 22 or newer (uses the built-in `node:sqlite` module; developed on Node 26)
-- npm
-- An existing OpenCode database, normally at `~/.local/share/opencode/opencode.db`
+- Rust (stable; a recent version is needed for the crates used here)
+- A C compiler (`cc`) — `rusqlite` builds a bundled SQLite, so no separate SQLite development package is needed
+- An existing OpenCode database, normally `~/.local/share/opencode/opencode.db`
 
-## Run it locally
+Nothing else. No Node, no npm, no database server.
 
-```sh
-npm install
-npm run dev
-```
-
-Open <http://localhost:3000>.
-
-For a production-style local run:
+## Build and run
 
 ```sh
-npm run build
-npm start
+cargo build --release
+./target/release/opencode-token-dashboard
 ```
 
-### Configuration
+Then open <http://127.0.0.1:3000>.
 
-| Variable | Default | Purpose |
-|---|---|---|
-| `OPENCODE_DB_PATH` | `~/.local/share/opencode/opencode.db` | Path to the OpenCode SQLite database to read |
-
-Example:
+### Options
 
 ```sh
-OPENCODE_DB_PATH=/path/to/opencode.db npm run dev
+opencode-token-dashboard [--host ADDRESS] [--port PORT] [--db-path PATH]
 ```
 
-There are no secrets and no `.env` file is required. The database is always opened with `readOnly: true`.
+| Option | Default |
+|---|---|
+| `--host` | `127.0.0.1` |
+| `--port` | `3000` (or `PORT` env var) |
+| `--db-path` | `~/.local/share/opencode/opencode.db` (or `OPENCODE_DB_PATH` env var) |
 
-## What it shows
+`--help` prints the same information. The database is always opened with `SQLITE_OPEN_READ_ONLY`.
 
-- **Overview** — today and all-time totals (with yesterday and the previous 7-day daily average), fresh vs cached tokens, a daily stacked chart (last 30 days or all time), a daily detail table with its own CSV export, and the top sessions.
-- **Sessions** — every session with input, output, reasoning, cache read and total, searchable by title/model/project, sortable by any column, and exportable as CSV.
-- **Models** — totals and share of usage per model and variant.
-- **Projects** — totals and share of usage per project directory.
+## Gentoo
 
-"Fresh" means input + output + reasoning. "Total" also includes cache reads and cache writes. Cache reads are usually the largest number and are always labelled separately so the figures are not misleading.
-
-Days are grouped by the machine's local calendar date.
-
-## Tests and checks
+Install a Rust toolchain (a C compiler is already part of a normal Gentoo system):
 
 ```sh
-npm test                    # Vitest unit + fixture-DB integration tests
-npm run test:e2e            # Playwright E2E and responsive checks (requires a running server)
-npm run lint                # ESLint
-npx tsc --noEmit            # TypeScript
-npm run build               # Production build
+emerge --ask dev-lang/rust
 ```
 
-CI runs lint, type check, unit tests and the production build on every push and pull request via `.github/workflows/ci.yml`.
+Build and install the binary:
 
-`npm run test:e2e` needs a dev server on `http://localhost:3000` and a Playwright browser (`npx playwright install chromium`). It checks four routes at six viewport widths, search, sorting, chart ranges, CSV export, 200% zoom, reduced motion and console errors. Use `BROWSERS=chromium,firefox npm run test:e2e` to run it in both browsers. WebKit needs system libraries that must be installed as root (`npx playwright install-deps webkit`).
+```sh
+git clone https://github.com/hidezfzefz/opencode-token-dashboard.git
+cd opencode-token-dashboard
+cargo build --release
+install -m 755 target/release/opencode-token-dashboard /usr/local/bin/
+```
 
-See [TEST-PLAN.md](TEST-PLAN.md), [TEST-REPORT.md](TEST-REPORT.md) and [SECURITY-REVIEW.md](SECURITY-REVIEW.md) for the full results and open items.
+Run it as your normal user so it can read your OpenCode database:
 
-## Design and data
+```sh
+OPENCODE_DB_PATH=/home/youruser/.local/share/opencode/opencode.db \
+  /usr/local/bin/opencode-token-dashboard --host 127.0.0.1 --port 3000
+```
 
-- Next.js 16 App Router, React 19, TypeScript, Tailwind CSS v4, Recharts, Lucide.
-- Convio Design tokens: dark, calm, minimal, all colours declared in one `:root` block in `src/app/globals.css`.
-- All aggregation lives in `src/lib/usage.ts`; the read-only connection lives in `src/lib/db.ts`. No SQL is built from user input.
+An OpenRC service file is included at `contrib/opencode-token-dashboard.initd`:
+
+```sh
+cp contrib/opencode-token-dashboard.initd /etc/init.d/opencode-token-dashboard
+chmod +x /etc/init.d/opencode-token-dashboard
+# edit OPENCODE_DB_PATH and command_args in the file, then:
+rc-update add opencode-token-dashboard default
+rc-service opencode-token-dashboard start
+```
+
+SQLite is bundled into the binary (`rusqlite` with the `bundled` feature), so you do **not** need `dev-db/sqlite`. The release binary is about 4 MB and is fully self-contained apart from glibc.
+
+## Pages
+
+- `/` — totals, yesterday and 7-day average, daily SVG chart, daily detail table, top sessions
+- `/sessions` — searchable, sortable session table with CSV export
+- `/models`, `/projects` — usage breakdowns with share bars
+- `/daily.csv`, `/sessions.csv` — CSV downloads
+- `/icon.svg`, `/static/style.css` — embedded assets
+
+All pages are rendered server-side with Tera templates compiled into the binary. The chart is generated as SVG in Rust; there is no JavaScript in the app.
+
+## Security
+
+- The database connection is read-only; a unit test proves an INSERT fails.
 - No prompt text or message content is read or rendered — only token counters and labels.
+- All SQL is static; query parameters are only used for in-memory filtering and sorting.
+- Security headers are set on every response: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`.
+- No network calls, no telemetry, no secrets.
 
-## Deployment
+## Tests
 
-There is intentionally no cloud deployment in v1. The app reads a local file, so it is meant to run on the same machine as OpenCode. If you expose it beyond localhost, add authentication and network controls first — see [SECURITY-REVIEW.md](SECURITY-REVIEW.md).
+```sh
+cargo fmt -- --check
+cargo clippy --all-targets -- -D warnings
+cargo test
+cargo build --release
+```
+
+`cargo test` covers number formatting, CSV escaping, the SVG chart, read-only database access, and aggregation against a synthetic fixture database. Optional browser E2E (needs the archived Node toolchain):
+
+```sh
+cd legacy-nextjs
+npm ci
+node e2e-rust.mjs
+```
+
+CI runs formatting, clippy, tests and a release build on every push and pull request.
+
+## Notes
+
+- Days are grouped by the machine's local calendar date.
+- "Fresh" means input + output + reasoning. "Total" includes cache reads and writes, which usually dominate.
+- The app is designed for localhost. If you expose it beyond your own machine, put it behind authentication and a network control.
 
 ## Rollback
 
-The project uses git. To undo a change, revert the relevant commit:
+The project uses git. To undo a change:
 
 ```sh
 git revert <commit>
 ```
-
-## Known limitations
-
-- Chromium and Firefox pass the full E2E suite; WebKit could not run here because its host libraries are missing and installing them requires root.
-- The chart animates on first load, so the first screenshot may show axes before the filled areas appear.
-- Cache-read tokens dominate the raw totals; use the "fresh" figures when comparing actual model work.
-- Development tooling has 16 high npm audit findings from an unpatched `picomatch` ReDoS advisory. Production dependencies have zero known vulnerabilities. See [SECURITY-REVIEW.md](SECURITY-REVIEW.md).

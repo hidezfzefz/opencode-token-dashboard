@@ -1,52 +1,25 @@
-# opencode-token-dashboard: build plan
+# opencode-token-dashboard: plan
+
+## Goal
+Keep the website; rebuild the implementation in Rust so it runs on Gentoo with no Node runtime.
 
 ## Architecture
-- Next.js App Router. Server Components read SQLite directly via `node:sqlite` (read-only).
-- Data layer in `src/lib/usage.ts`: one function opens the DB, one set of pure aggregation helpers.
-- Pages: `/` overview, `/sessions`, `/models`, `/projects`. Each page calls the data layer server-side.
-- Client components only for the refresh button and the chart (Recharts needs the browser).
-- No API routes needed in v1; no auth; no writes to the OpenCode DB.
+- `src/main.rs` — CLI, template registration, server startup.
+- `src/usage.rs` — read-only SQLite access and aggregation.
+- `src/chart.rs` — server-side SVG chart (wide and narrow variants).
+- `src/csv.rs`, `src/format.rs` — pure helpers.
+- `src/web.rs` — Axum routes, query handling, Tera contexts, security headers.
+- `templates/`, `static/` — the preserved website, embedded into the binary at compile time.
 
-## Data model (read only)
-- `session_message` (id, session_id, type, time_created, data JSON with `model`, `tokens`)
-- `session_v2` (id, title, directory, project_id, time_created/updated, token columns, `model`)
-- `project` (id, ...)
-- Token fields: input, output, reasoning, cache.read, cache.write.
-- Derived: fresh = input + output + reasoning; total = fresh + cache.read + cache.write.
-- Day bucket = local timezone date from `time_created` (ms).
+## Build order (done)
+1. Archive the Next.js app into `legacy-nextjs/`; copy its CSS and icon into `static/`. ✓
+2. Create the Cargo project with Axum, Tokio, rusqlite (bundled), Tera, Chrono and Serde. ✓
+3. Port the data layer and aggregation, with fixture-DB tests. ✓
+4. Recreate the four pages, CSV downloads, 404 and error pages in Tera. ✓
+5. Port the chart to server-generated SVG, with a dedicated narrow variant. ✓
+6. Add security headers, CLI options and Gentoo OpenRC service. ✓
+7. Verify with cargo fmt, clippy, tests, release build and browser E2E on Chromium and Firefox. ✓
+8. Replace CI with a Rust workflow; update all documentation. ✓
 
-## Milestone 1 — Vertical slice: overview page
-1. Scaffold Next.js + TypeScript + Tailwind v4; verify `npm run dev` serves a page. ✓ by curl HTTP 200.
-2. Add design tokens in `src/app/globals.css` (:root block) and a top-bar layout. ✓ by screenshot at 1280×800 and 360px.
-3. Implement `src/lib/usage.ts`: open DB read-only, aggregate today/all-time + per-day. ✓ by Vitest against a synthetic fixture DB.
-4. Build overview page: headline totals, per-day chart, top sessions. ✓ by comparing numbers to a direct SQL query on the real DB.
-5. Commit milestone 1. ✓
-
-## Milestone 2 — Breakdowns
-6. `/sessions` table: search, sortable token columns, local timezone dates. ✓ Vitest + browser search check.
-7. `/models` and `/projects` breakdown tables with share bars. ✓ browser check on real data.
-8. Refresh control that revalidates the server data. ✓ button renders and calls router.refresh().
-9. Commit milestone 2. ✓ Hallmark sloplint: 0 FAIL, 0 WARN, 2 WAIVED (7b, declared absolute surface).
-
-## Milestone 3 — Quality and ship
-10. Security review: read-only DB, no prompt content rendered, no network calls, path from env validated. ✓ SECURITY-REVIEW.md.
-11. Tests: 18 Vitest tests + Playwright E2E on Chromium and Firefox (responsive, search, sort, CSV export, zoom, reduced motion). ✓ all green.
-12. README with setup, env vars, screenshots description, and limitations. ✓
-13. Create GitHub repo and push; commit history with clear messages. ✓ https://github.com/hidezfzefz/opencode-token-dashboard
-14. Re-check round: verified displayed figures against direct SQL, added CSV export with unit tests, closed cross-browser and zoom/reduced-motion gaps. ✓
-15. Second improvement round: yesterday and 7-day average stats, daily detail table with its own CSV export, generic CSV helpers, 21 tests, and GitHub Actions CI. ✓
-
-## Convio stage checkpoints
-- [x] Discover — BRIEF.md written.
-- [x] Plan — this file.
-- [ ] Design — **call next_stage** before building any screen.
-- [ ] Scaffold — **call next_stage** before creating the app.
-- [ ] Data and auth — **call next_stage** before data-layer work.
-- [ ] Build features — **call next_stage** before feature work.
-- [ ] Security review — **call next_stage** before review.
-- [ ] Test thoroughly — **call next_stage** before testing.
-- [ ] Ship — **call next_stage** before handover.
-
-## Notes
-- The OpenCode DB is large (~260 MB) and in WAL mode; queries aggregate server-side, no raw rows shipped to the client.
-- Cache reads dominate totals; label them explicitly so "fresh" vs "total" is never ambiguous.
+## Open
+- WebKit browser testing still needs root-level host libraries.

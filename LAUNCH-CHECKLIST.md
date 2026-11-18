@@ -1,35 +1,29 @@
-# Launch checklist — opencode-token-dashboard
+# Launch checklist — Rust implementation
 
-## Deploy
-- [x] Production build passes with no unexplained warnings — `npm run build`.
-- [x] No secrets or environment credentials exist; `OPENCODE_DB_PATH` is an optional local path read only on the server. `.env*` is gitignored.
-- [n/a] Database migrations and production backups — the app never writes to a database; it opens OpenCode's existing DB read-only.
-- [n/a] Domain, HTTPS, www/apex redirect and HSTS — the app is local-first and intentionally not deployed to a cloud host in v1.
-- [n/a] Preview/staging `noindex` — no preview deployments.
+## Build
+- [x] Release build passes with no warnings.
+- [x] rustfmt and clippy clean; 10 tests pass.
+- [x] Binary is self-contained: bundled SQLite, no Node runtime, no database server.
+- [x] No secrets or credentials; database path is an optional local argument/env var.
+- [x] No migrations or backups needed: the app never writes to a database.
 
-## Search and sharing
-- [x] Page metadata and `lang="en"` set in the root layout. There is no canonical URL because the app has no public domain.
-- [n/a] Open Graph / Twitter card image — no public sharing surface.
-- [n/a] robots.txt, sitemap.xml, structured data — local-only tool, not indexed.
-- [x] Favicon via `src/app/icon.svg` and a useful `not-found.tsx` page.
+## Website
+- [x] Same four pages, CSV downloads, 404 and error page as the original.
+- [x] Same design tokens and CSS, embedded in the binary.
+- [x] Favicon embedded; page titles and `lang` set.
+- [x] Responsive from 360 to 1920 px in Chromium and Firefox.
 
-## Commerce / email
-- [n/a] No store, payments, webhooks, tax or shipping.
-- [n/a] No email sending.
-
-## Legal and privacy
-- [n/a] No visitor data is collected, no cookies, no analytics. The app runs on the user's own machine and renders only their local usage metadata.
-
-## Observability
-- [n/a] Error tracking and uptime checks — no public service to monitor. Errors are shown in the app's error boundary and logged to the browser console.
-- [n/a] Analytics — none by design.
+## Security
+- [x] Read-only database access, tested.
+- [x] Security headers on every response.
+- [x] No network calls, telemetry, cookies or user data collection.
 
 ## Handover
-- [x] README with local run instructions, configuration, tests, rollback and limitations.
-- [x] TEST-PLAN.md, TEST-REPORT.md and SECURITY-REVIEW.md written and committed.
-- [x] Source pushed to GitHub (see the repository URL in the final handover).
-- [x] CI workflow runs lint, type check, tests and build on every push and pull request.
+- [x] README with Gentoo build/run instructions and an OpenRC service file.
+- [x] TEST-PLAN.md, TEST-REPORT.md and SECURITY-REVIEW.md updated for Rust.
+- [x] CI workflow builds and tests the Rust app.
+- [x] Pushed to GitHub.
 
-## Still open (not blocking a local tool)
-- WebKit cross-browser run — browser binary installed, but host libraries are missing and installing them requires root.
-- Unpatchable dev-only `picomatch` advisory (documented in SECURITY-REVIEW.md).
+## Open
+- WebKit cross-browser run (needs root-level host libraries).
+- Cost-per-model estimates (needs a user-supplied pricing file).

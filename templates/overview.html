@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">Token usage</h1>
+    <p class="page-subtitle">Read from {{ db_path }}</p>
+  </div>
+  <form action="/" method="get">
+    <button type="submit" class="btn">Refresh</button>
+  </form>
+</div>
+
+<div class="grid-stats">
+  <div class="card">
+    <span class="stat-label">Today, all tokens</span>
+    <strong class="stat-value" title="{{ today_total_exact }}">{{ today_total }}</strong>
+    <div class="stat-meta">Yesterday {{ yesterday_total }}</div>
+  </div>
+  <div class="card">
+    <span class="stat-label">Today, fresh</span>
+    <strong class="stat-value" title="{{ today_fresh_exact }}">{{ today_fresh }}</strong>
+    <div class="stat-meta">{{ today_percent }} of today</div>
+  </div>
+  <div class="card">
+    <span class="stat-label">All time, all tokens</span>
+    <strong class="stat-value" title="{{ all_total_exact }}">{{ all_total }}</strong>
+    <div class="stat-meta">{{ message_count }} assistant messages</div>
+  </div>
+  <div class="card">
+    <span class="stat-label">All time, fresh</span>
+    <strong class="stat-value" title="{{ all_fresh_exact }}">{{ all_fresh }}</strong>
+    <div class="stat-meta">{{ all_percent }} of all time</div>
+  </div>
+</div>
+
+<section class="card" style="margin-bottom:var(--space-5)">
+  <div class="card-head">
+    <h2 class="card-title">Daily usage</h2>
+    <nav class="nav" aria-label="Chart range">
+      <a href="/?range=30d" class="nav-link" {% if range != "all" %}data-active="true"{% endif %}>Last 30 days</a>
+      <a href="/?range=all" class="nav-link" {% if range == "all" %}data-active="true"{% endif %}>All time</a>
+    </nav>
+  </div>
+  {% if chart_svg %}
+    <div class="chart-desktop">{{ chart_svg|safe }}</div>
+    <div class="chart-mobile">{{ chart_mobile_svg|safe }}</div>
+  {% else %}
+    <div class="empty">No assistant messages found in the database yet.</div>
+  {% endif %}
+  <p class="stat-meta">Previous 7 days daily average: {{ seven_day_average }} tokens. Yesterday: {{ yesterday_total }} tokens. Fresh means input, output and reasoning.</p>
+</section>
+
+<section class="card" style="margin-bottom:var(--space-5)">
+  <div class="card-head">
+    <h2 class="card-title">Daily detail</h2>
+    <a class="btn" href="/daily.csv?range={{ range }}">Export daily CSV</a>
+  </div>
+  {% if daily_rows %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th scope="col">Day</th><th scope="col" class="num">Fresh</th><th scope="col" class="num">Cache read</th><th scope="col" class="num">Total</th></tr></thead>
+      <tbody>
+        {% for row in daily_rows %}
+        <tr><td>{{ row.day }}</td><td class="num">{{ row.fresh }}</td><td class="num">{{ row.cache_read }}</td><td class="num">{{ row.total }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="empty">No assistant messages found in the database yet.</div>
+  {% endif %}
+</section>
+
+<section class="card">
+  <div class="card-head">
+    <h2 class="card-title">Sessions using the most tokens</h2>
+    <a href="/sessions" class="nav-link">All sessions</a>
+  </div>
+  {% if session_rows %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th scope="col">Session</th><th scope="col">Model</th><th scope="col" class="num">Fresh</th><th scope="col" class="num">Cache read</th><th scope="col" class="num">Total</th></tr></thead>
+      <tbody>
+        {% for row in session_rows %}
+        <tr><td class="ellipsis" title="{{ row.label }}">{{ row.label }}</td><td class="ellipsis" title="{{ row.model }}">{{ row.model }}</td><td class="num">{{ row.fresh }}</td><td class="num">{{ row.cache_read }}</td><td class="num">{{ row.total }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="empty">No sessions yet.</div>
+  {% endif %}
+</section>
+{% endblock content %}

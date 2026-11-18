@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }} — OpenCode dashboard</title>
+  <meta name="description" content="Local dashboard for OpenCode token usage">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="shell topbar-inner">
+      <a href="/" class="wordmark">
+        <span class="wordmark-mark" aria-hidden="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 5 16 3-8h3"/></svg>
+        </span>
+        token usage
+      </a>
+      <nav class="nav" aria-label="Main navigation">
+        <a href="/" class="nav-link" {% if active == "overview" %}data-active="true" aria-current="page"{% endif %}>Overview</a>
+        <a href="/sessions" class="nav-link" {% if active == "sessions" %}data-active="true" aria-current="page"{% endif %}>Sessions</a>
+        <a href="/models" class="nav-link" {% if active == "models" %}data-active="true" aria-current="page"{% endif %}>Models</a>
+        <a href="/projects" class="nav-link" {% if active == "projects" %}data-active="true" aria-current="page"{% endif %}>Projects</a>
+      </nav>
+    </div>
+  </header>
+  <main class="shell page">
+    {% block content %}{% endblock content %}
+  </main>
+</body>
+</html>

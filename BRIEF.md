@@ -1,45 +1,22 @@
 # opencode-token-dashboard: brief
 
-**What it is:** A local-first web dashboard that reads OpenCode's own SQLite database and turns raw token counters into a clear picture of usage.
-**For:** The developer running OpenCode on their own machine. First thing they do: open the dashboard and see today's and all-time token totals.
-**Success:** In month one, the tool answers "how many tokens did I use today / ever / per project / per model" without hand-written SQL.
+**What it is:** A local dashboard for OpenCode token usage, rewritten as a native Rust web app.
+**For:** A developer running OpenCode on their own machine, including a Gentoo desktop. First action: open the dashboard and see today's and all-time token totals.
+**Success:** The same website as before, served by one self-contained Rust binary that builds and runs on Gentoo with no Node.js runtime.
 
-## Scope (v1)
-- Pages or screens:
-  - Overview — headline totals (today, all-time, fresh vs cached), per-day history chart, top consumers.
-  - Sessions — sortable table of sessions with token columns, search by title.
-  - Models — breakdown by model/provider.
-  - Projects — breakdown by project/directory.
-- Features:
-  - Read `~/.local/share/opencode/opencode.db` read-only via `node:sqlite`, with configurable path via env var.
-  - Aggregate tokens: input, output, reasoning, cache read, cache write.
-  - "Fresh tokens" = input + output + reasoning; "Total" includes cache reads/writes.
-  - Local timezone day bucketing; today = local calendar day.
-  - Refresh button; no background workers.
-- Not in v1: auth, hosted deployment, cost estimates, writing to the DB, prompt content display.
+## Scope
+- Pages: overview, sessions, models, projects, plus CSV downloads and a 404 page.
+- Features: today/all-time totals, yesterday and 7-day average, daily SVG chart, daily detail table, search and sort, CSV export, read-only SQLite access.
+- Not included: auth, cloud hosting, cost estimates, writing to the database, prompt content.
 
 ## Design
-- Direction: Convio Design — dark, calm, minimal. All colors/spacing from CSS custom properties in one `:root` block. No framework default palette.
-- Density-first dashboard: top bar, tabular numerals, tables before cards, 4 data states (loading/empty/error/full).
-- Accessible: WCAG 2.2 AA, visible focus, prefers-reduced-motion.
+- The existing website is kept: Convio Design tokens, dark and calm, all colours in one CSS block.
+- Server-rendered Tera templates and a Rust-generated SVG chart replace React/Recharts. No JavaScript.
 
 ## Stack
-- Framework: Next.js (App Router, server components read SQLite directly).
-- Styling: Tailwind CSS v4.
-- Components: shadcn/ui-style local components + Lucide icons; Recharts for the history chart.
-- Data: `node:sqlite` (built into Node 22+), read-only connection to the OpenCode DB. No hosted DB, no ORM, no auth.
-- Testing: Vitest for aggregation logic with a synthetic fixture DB.
-- Hosting: local-first (`npm run dev` / `npm run build && npm start`). Not deployed to a cloud host in v1.
+- Rust, Axum, Tokio, rusqlite (bundled SQLite), Tera, Chrono, Serde.
+- No Node.js at runtime. The former Next.js app is archived under `legacy-nextjs/` for reference.
 
-## Content and integrations
-- No external APIs. No telemetry. No network calls.
-
-## Constraints and risks
-- The OpenCode DB is live/WAL-mode; open read-only to avoid interference.
-- Schema may evolve; aggregation code isolated in one module so it's easy to adapt.
-- Cache-read tokens dominate raw totals; label them clearly to avoid misleading the user.
-
-## Assumptions (please check)
-- DB path is `~/.local/share/opencode/opencode.db` (overridable with `OPENCODE_DB_PATH`).
-- "Today" uses the machine's local timezone.
-- No credentials are needed because everything stays on the local machine.
+## Constraints
+- Must build with just a Rust toolchain and a C compiler on Gentoo.
+- Database is opened read-only; no data leaves the machine.
