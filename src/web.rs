@@ -18,11 +18,34 @@ use crate::csv;
 use crate::format::{format_compact, format_number, format_percent};
 use crate::usage::{self, SessionTotals, UsageSnapshot};
 
+pub fn templates() -> Tera {
+    let mut tera = Tera::default();
+    tera.add_raw_template("base.html", include_str!("../templates/base.html"))
+        .expect("base template");
+    tera.add_raw_template("overview.html", include_str!("../templates/overview.html"))
+        .expect("overview template");
+    tera.add_raw_template("sessions.html", include_str!("../templates/sessions.html"))
+        .expect("sessions template");
+    tera.add_raw_template("models.html", include_str!("../templates/models.html"))
+        .expect("models template");
+    tera.add_raw_template("projects.html", include_str!("../templates/projects.html"))
+        .expect("projects template");
+    tera.add_raw_template("error.html", include_str!("../templates/error.html"))
+        .expect("error template");
+    tera.add_raw_template(
+        "not_found.html",
+        include_str!("../templates/not_found.html"),
+    )
+    .expect("not found template");
+    tera
+}
+
 #[derive(Clone)]
 pub struct AppState {
     pub tera: Arc<Tera>,
     pub db_path: PathBuf,
     pub refresh_seconds: i64,
+    pub pricing: crate::cost::Pricing,
 }
 
 #[derive(Deserialize)]
@@ -68,6 +91,7 @@ fn render_with_refresh(
     context.insert("title", title);
     context.insert("active", active);
     context.insert("refresh_seconds", &refresh_seconds);
+    context.insert("cost_configured", &!state.pricing.models.is_empty());
     match state.tera.render(template, context) {
         Ok(html) => (status, Html(html)).into_response(),
         Err(error) => (
@@ -200,6 +224,20 @@ async fn overview(State(state): State<AppState>, Query(query): Query<OverviewQue
         "session_rows",
         &session_view(&snapshot.sessions[..snapshot.sessions.len().min(8)]),
     );
+    let costs = crate::cost::estimate(&snapshot, &state.pricing);
+    let cost_rows: Vec<Value> = costs
+        .rows
+        .iter()
+        .map(|row| {
+            json!({
+                "model": row.model,
+                "messages": format_number(row.messages),
+                "total": crate::cost::format_money(row.total),
+            })
+        })
+        .collect();
+    context.insert("cost_rows", &cost_rows);
+    context.insert("cost_total", &crate::cost::format_money(costs.total));
     render(
         &state,
         "overview.html",

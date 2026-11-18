@@ -75,6 +75,20 @@ pub fn config_path() -> PathBuf {
         .join("config.json")
 }
 
+pub fn pricing_path() -> PathBuf {
+    config_path()
+        .parent()
+        .map(|parent| parent.join("pricing.json"))
+        .unwrap_or_else(|| PathBuf::from("pricing.json"))
+}
+
+pub fn load_pricing_from(path: &Path) -> crate::cost::Pricing {
+    std::fs::read_to_string(path)
+        .ok()
+        .and_then(|content| serde_json::from_str::<crate::cost::Pricing>(&content).ok())
+        .unwrap_or_default()
+}
+
 pub fn load_from(path: &Path) -> Settings {
     std::fs::read_to_string(path)
         .ok()

@@ -1,24 +1,21 @@
-# opencode-token-dashboard: plan
+# v2 rework plan — API contract and build order
 
-## Goal
-Turn the Rust dashboard into a fully native desktop app for Linux, Windows and macOS, while keeping the browser version available.
+## Contract
+`openapi.yaml` is the source of truth. Versioning is in the URL (`/api/v1`). All error responses use `{"error":{"code","message"}}`. No auth or rate limits (localhost only). `PUT /api/v1/settings` is idempotent full replacement with strict field validation.
 
-## Architecture
-- `src/gui.rs` — egui app: tabs, tables, search, sort, custom-painted chart, CSV export.
-- `src/main.rs` — default native GUI; `--web` starts the Axum server.
-- `src/usage.rs` — shared read-only data layer with per-OS default database paths.
-- `src/chart.rs`, `src/format.rs`, `src/csv.rs` — shared pure helpers.
-- `templates/`, `static/` — preserved website for web mode.
+## Build order (each endpoint tested before the next)
+1. `GET /api/v1/usage` — serialize the shared `UsageSnapshot` as JSON. Test: response matches the aggregate returned by the data layer.
+2. `GET /api/v1/usage/daily` — range `30d|all`, newest first. Test: length and ordering match the snapshot's `per_day` slice.
+3. `GET /api/v1/usage/sessions` — `q`, whitelisted `sort`, `dir`. Test: search filters, sort order, invalid sort falls back to total.
+4. `GET /api/v1/usage/costs` — user-supplied pricing only. Test: empty rows with no pricing file; rates applied per million tokens.
+5. `GET /api/v1/settings` — returns persisted settings. Test: round-trip with a temp config path.
+6. `PUT /api/v1/settings` — strict JSON body, 422 on invalid fields/values. Test: valid update persists; invalid returns 422 and does not change the file.
+7. GUI and web UI consume the same library functions (no duplicated aggregation).
+8. Non-blocking GUI startup: load data on a worker thread, show the window immediately.
+9. Security review, thorough tests, launch checklist, commit and push.
 
-## Done
-1. Added eframe/egui and implemented the native window. ✓
-2. Reused the data layer, aggregation, formatting and CSV helpers. ✓
-3. Implemented all four tabs, refresh, search, sort, chart and CSV export. ✓
-4. Made the default database path platform-aware (Windows/macOS/Linux). ✓
-5. Verified the window launches and stays open on this machine. ✓
-6. CI matrix builds and tests on Ubuntu, Windows and macOS and uploads binaries. ✓
-7. Auto sync: GUI watches database/WAL fingerprints and reloads on change; web mode meta refresh with configurable interval. ✓
-8. Configurable GUI sync interval (Off/1/5/15/60s) persisted with chart range in a platform config file; web auto-refresh pauses during search. ✓
-
-## Open
-- No GUI screenshot test in CI (would need a virtual display).
+## Cross-cutting rules
+- One data layer in `src/lib.rs`; GUI and web/API are thin frontends.
+- No `unwrap`/`expect` in request paths; return typed errors.
+- Clippy with `--all-targets --all-features --locked -- -D warnings`; rustfmt; tests on all three OSes in CI.
+- Keep the existing website, CSV downloads, auto sync and settings behaviour working throughout.
