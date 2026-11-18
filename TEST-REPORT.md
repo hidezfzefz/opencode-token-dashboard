@@ -25,6 +25,7 @@
 3. Mobile SVG chart text was horizontally squashed by viewBox scaling; a separate 390px chart is now rendered under 640px.
 4. The last x-axis label was clipped; first and last labels now use start/end anchoring.
 5. CI initially still used the Node workflow; replaced with a Rust toolchain workflow.
+6. Stable clippy in CI flagged a manual modulo check that nightly allowed; replaced with `is_multiple_of(3)`. CI now passes all steps.
 
 ## Still open
 - WebKit browser test: host libraries missing on this machine and installing them needs root.
