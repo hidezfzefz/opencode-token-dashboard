@@ -1,7 +1,7 @@
 # Test plan
 
 ## Rust (`cargo test`)
-- Number formatting, CSV escaping, SVG chart helper, read-only database access, aggregation with a synthetic fixture database, and database fingerprint changes.
+- Number formatting, CSV escaping, SVG chart helper, read-only database access, aggregation with a synthetic fixture database, database fingerprint changes, and settings save/load plus interval normalization.
 
 ## Native GUI
 - `cargo build --release` on Linux, Windows and macOS via CI matrix.

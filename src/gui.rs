@@ -6,6 +6,7 @@ use egui::{Color32, Stroke};
 
 use crate::csv;
 use crate::format::{format_compact, format_number, format_percent};
+use crate::settings::{self, Settings};
 use crate::usage::{self, DayTotals, SessionTotals, UsageSnapshot};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -82,7 +83,8 @@ struct DashboardApp {
     all_days: bool,
     notice: Option<String>,
     styled: bool,
-    auto_sync: bool,
+    sync_seconds: u64,
+    config_path: PathBuf,
     last_check: Instant,
     last_fingerprint: Vec<(u64, u128)>,
     last_synced: Option<String>,
@@ -94,6 +96,8 @@ impl DashboardApp {
             Ok(snapshot) => Data::Ready(Box::new(snapshot)),
             Err(error) => Data::Error(error),
         };
+        let config_path = settings::config_path();
+        let config = settings::load_from(&config_path);
         Self {
             db_path: db_path.clone(),
             data,
@@ -101,13 +105,24 @@ impl DashboardApp {
             search: String::new(),
             sort: SortKey::Total,
             descending: true,
-            all_days: false,
+            all_days: config.all_days,
             notice: None,
             styled: false,
-            auto_sync: true,
+            sync_seconds: config.auto_sync_seconds,
+            config_path,
             last_check: Instant::now(),
             last_fingerprint: usage::db_fingerprint(&db_path),
             last_synced: Some(now_label()),
+        }
+    }
+
+    fn persist(&mut self) {
+        let settings = Settings {
+            auto_sync_seconds: self.sync_seconds,
+            all_days: self.all_days,
+        };
+        if let Err(error) = settings::save_to(&self.config_path, &settings) {
+            self.notice = Some(format!("Could not save settings: {error}"));
         }
     }
 
@@ -288,9 +303,9 @@ impl eframe::App for DashboardApp {
             self.styled = true;
         }
 
-        if self.auto_sync {
+        if self.sync_seconds > 0 {
             let now = Instant::now();
-            if now.duration_since(self.last_check) >= Duration::from_secs(1) {
+            if now.duration_since(self.last_check) >= Duration::from_secs(self.sync_seconds) {
                 self.last_check = now;
                 let fingerprint = usage::db_fingerprint(&self.db_path);
                 if fingerprint != self.last_fingerprint {
@@ -305,7 +320,24 @@ impl eframe::App for DashboardApp {
             .show(ui, |ui| {
                 ui.horizontal(|ui| {
                     ui.heading(egui::RichText::new("token usage").size(22.0));
-                    ui.checkbox(&mut self.auto_sync, "Auto sync");
+                    ui.label("Auto sync");
+                    let current = settings::SYNC_OPTIONS
+                        .iter()
+                        .find(|(value, _)| *value == self.sync_seconds)
+                        .map(|(_, label)| *label)
+                        .unwrap_or("1 second");
+                    egui::ComboBox::from_id_salt("auto-sync")
+                        .selected_text(current)
+                        .show_ui(ui, |ui| {
+                            for (value, label) in settings::SYNC_OPTIONS {
+                                if ui
+                                    .selectable_value(&mut self.sync_seconds, value, label)
+                                    .clicked()
+                                {
+                                    self.persist();
+                                }
+                            }
+                        });
                     if ui.button("Refresh").clicked() {
                         self.refresh();
                     }
@@ -406,8 +438,15 @@ impl DashboardApp {
         ui.add_space(10.0);
         ui.horizontal(|ui| {
             ui.label(egui::RichText::new("Daily usage").size(17.0));
-            ui.selectable_value(&mut self.all_days, false, "Last 30 days");
-            ui.selectable_value(&mut self.all_days, true, "All time");
+            if ui
+                .selectable_value(&mut self.all_days, false, "Last 30 days")
+                .clicked()
+                || ui
+                    .selectable_value(&mut self.all_days, true, "All time")
+                    .clicked()
+            {
+                self.persist();
+            }
         });
         let days: Vec<DayTotals> = if self.all_days {
             snapshot.per_day.clone()

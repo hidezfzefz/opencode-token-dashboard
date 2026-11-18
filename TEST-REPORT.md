@@ -4,7 +4,7 @@
 |---|---|
 | `cargo fmt -- --check` | pass |
 | `cargo clippy --all-targets -- -D warnings` | pass, 0 warnings |
-| `cargo test` | 11 passed, 0 failed |
+| `cargo test` | 13 passed, 0 failed |
 | `cargo build --release` (Linux) | pass |
 | Native window launch on Linux | process stayed alive for the full timeout (no crash) |
 | `--web` mode after GUI changes | HTTP 200 on `/` |
@@ -20,6 +20,8 @@
 - Database fingerprint changes when the underlying file changes: unit test passes.
 - Web mode emits `<meta http-equiv="refresh" content="15">` by default and no tag when `OTD_AUTO_REFRESH_SECONDS=0`.
 - Native window still launches with auto sync enabled; no crash.
+- Settings save/load round-trip tested; invalid intervals normalized to 1 second.
+- Web auto-refresh is absent on `/sessions?q=...` so typing in search is not interrupted.
 
 ## Open
 - Automated GUI screenshot testing (needs a virtual display in CI).

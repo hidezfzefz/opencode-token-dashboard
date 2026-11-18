@@ -18,6 +18,7 @@ Turn the Rust dashboard into a fully native desktop app for Linux, Windows and m
 5. Verified the window launches and stays open on this machine. ✓
 6. CI matrix builds and tests on Ubuntu, Windows and macOS and uploads binaries. ✓
 7. Auto sync: GUI watches database/WAL fingerprints and reloads on change; web mode meta refresh with configurable interval. ✓
+8. Configurable GUI sync interval (Off/1/5/15/60s) persisted with chart range in a platform config file; web auto-refresh pauses during search. ✓
 
 ## Open
 - No GUI screenshot test in CI (would need a virtual display).

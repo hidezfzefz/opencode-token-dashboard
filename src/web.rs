@@ -45,9 +45,29 @@ fn render(
     context: &mut Context,
     status: StatusCode,
 ) -> Response {
+    render_with_refresh(
+        state,
+        template,
+        title,
+        active,
+        context,
+        status,
+        state.refresh_seconds,
+    )
+}
+
+fn render_with_refresh(
+    state: &AppState,
+    template: &str,
+    title: &str,
+    active: &str,
+    context: &mut Context,
+    status: StatusCode,
+    refresh_seconds: i64,
+) -> Response {
     context.insert("title", title);
     context.insert("active", active);
-    context.insert("refresh_seconds", &state.refresh_seconds);
+    context.insert("refresh_seconds", &refresh_seconds);
     match state.tera.render(template, context) {
         Ok(html) => (status, Html(html)).into_response(),
         Err(error) => (
@@ -310,13 +330,20 @@ async fn sessions(State(state): State<AppState>, Query(query): Query<SessionsQue
         &format_number(snapshot.sessions.len() as i64),
     );
     context.insert("total_sessions", &snapshot.sessions.len());
-    render(
+    // A full page reload would wipe what the user is typing in the search box.
+    let refresh = if q.trim().is_empty() {
+        state.refresh_seconds
+    } else {
+        0
+    };
+    render_with_refresh(
         &state,
         "sessions.html",
         "Sessions",
         "sessions",
         &mut context,
         StatusCode::OK,
+        refresh,
     )
 }
 

@@ -2,6 +2,7 @@ mod chart;
 mod csv;
 mod format;
 mod gui;
+mod settings;
 mod usage;
 mod web;
 
