@@ -1,25 +1,22 @@
 # opencode-token-dashboard: plan
 
 ## Goal
-Keep the website; rebuild the implementation in Rust so it runs on Gentoo with no Node runtime.
+Turn the Rust dashboard into a fully native desktop app for Linux, Windows and macOS, while keeping the browser version available.
 
 ## Architecture
-- `src/main.rs` — CLI, template registration, server startup.
-- `src/usage.rs` — read-only SQLite access and aggregation.
-- `src/chart.rs` — server-side SVG chart (wide and narrow variants).
-- `src/csv.rs`, `src/format.rs` — pure helpers.
-- `src/web.rs` — Axum routes, query handling, Tera contexts, security headers.
-- `templates/`, `static/` — the preserved website, embedded into the binary at compile time.
+- `src/gui.rs` — egui app: tabs, tables, search, sort, custom-painted chart, CSV export.
+- `src/main.rs` — default native GUI; `--web` starts the Axum server.
+- `src/usage.rs` — shared read-only data layer with per-OS default database paths.
+- `src/chart.rs`, `src/format.rs`, `src/csv.rs` — shared pure helpers.
+- `templates/`, `static/` — preserved website for web mode.
 
-## Build order (done)
-1. Archive the Next.js app into `legacy-nextjs/`; copy its CSS and icon into `static/`. ✓
-2. Create the Cargo project with Axum, Tokio, rusqlite (bundled), Tera, Chrono and Serde. ✓
-3. Port the data layer and aggregation, with fixture-DB tests. ✓
-4. Recreate the four pages, CSV downloads, 404 and error pages in Tera. ✓
-5. Port the chart to server-generated SVG, with a dedicated narrow variant. ✓
-6. Add security headers, CLI options and Gentoo OpenRC service. ✓
-7. Verify with cargo fmt, clippy, tests, release build and browser E2E on Chromium and Firefox. ✓
-8. Replace CI with a Rust workflow; update all documentation. ✓
+## Done
+1. Added eframe/egui and implemented the native window. ✓
+2. Reused the data layer, aggregation, formatting and CSV helpers. ✓
+3. Implemented all four tabs, refresh, search, sort, chart and CSV export. ✓
+4. Made the default database path platform-aware (Windows/macOS/Linux). ✓
+5. Verified the window launches and stays open on this machine. ✓
+6. CI matrix builds and tests on Ubuntu, Windows and macOS and uploads binaries. ✓
 
 ## Open
-- WebKit browser testing still needs root-level host libraries.
+- No GUI screenshot test in CI (would need a virtual display).

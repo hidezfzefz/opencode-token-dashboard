@@ -183,7 +183,37 @@ pub fn default_db_path() -> PathBuf {
             return PathBuf::from(path);
         }
     }
-    let home = std::env::var("HOME").unwrap_or_else(|_| "/root".to_string());
+
+    #[cfg(target_os = "windows")]
+    {
+        if let Ok(path) = std::env::var("LOCALAPPDATA") {
+            if !path.is_empty() {
+                return PathBuf::from(path).join("opencode").join("opencode.db");
+            }
+        }
+        if let Ok(path) = std::env::var("APPDATA") {
+            if !path.is_empty() {
+                return PathBuf::from(path).join("opencode").join("opencode.db");
+            }
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        if let Ok(home) = std::env::var("HOME") {
+            if !home.is_empty() {
+                return PathBuf::from(home)
+                    .join("Library")
+                    .join("Application Support")
+                    .join("opencode")
+                    .join("opencode.db");
+            }
+        }
+    }
+
+    let home = std::env::var("HOME")
+        .or_else(|_| std::env::var("USERPROFILE"))
+        .unwrap_or_else(|_| ".".to_string());
     PathBuf::from(home)
         .join(".local")
         .join("share")

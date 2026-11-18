@@ -1,6 +1,7 @@
 mod chart;
 mod csv;
 mod format;
+mod gui;
 mod usage;
 mod web;
 
@@ -38,13 +39,13 @@ fn help() {
     println!();
     println!("Usage: opencode-token-dashboard [options]");
     println!();
-    println!("  --host <address>   Bind address (default 127.0.0.1)");
-    println!("  --port <port>      Port (default 3000, or PORT env var)");
-    println!(
-        "  --db-path <path>   OpenCode database (default ~/.local/share/opencode/opencode.db)"
-    );
-    println!("                     or OPENCODE_DB_PATH env var");
-    println!("  -h, --help         Show this help");
+    println!("  (no flag)         Open the native GUI window (default)");
+    println!("  --web             Run the local web server instead of the GUI");
+    println!("  --host <address>  Web server bind address (default 127.0.0.1)");
+    println!("  --port <port>     Web server port (default 3000, or PORT env var)");
+    println!("  --db-path <path>  OpenCode database (default ~/.local/share/opencode/opencode.db)");
+    println!("                    or OPENCODE_DB_PATH env var");
+    println!("  -h, --help        Show this help");
 }
 
 #[tokio::main]
@@ -53,6 +54,7 @@ async fn main() {
     let mut host = "127.0.0.1".to_string();
     let mut port: u16 = 3000;
     let mut db_path = usage::default_db_path();
+    let mut web_mode = false;
 
     while let Some(arg) = args.next() {
         match arg.as_str() {
@@ -60,6 +62,7 @@ async fn main() {
                 help();
                 return;
             }
+            "--web" => web_mode = true,
             "--host" => {
                 if let Some(value) = args.next() {
                     host = value;
@@ -89,6 +92,14 @@ async fn main() {
         }
     }
 
+    if !web_mode {
+        if let Err(error) = gui::run(db_path) {
+            eprintln!("Could not start the GUI: {error}");
+            std::process::exit(1);
+        }
+        return;
+    }
+
     println!("Reading database: {}", db_path.display());
     let state = AppState {
         tera: Arc::new(templates()),
@@ -100,6 +111,6 @@ async fn main() {
         .await
         .unwrap_or_else(|error| panic!("Could not bind to {address}: {error}"));
 
-    println!("Token usage dashboard listening on http://{address}");
+    println!("Token usage web server listening on http://{address}");
     axum::serve(listener, app).await.expect("Server failed");
 }

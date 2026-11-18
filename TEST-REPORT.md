@@ -1,32 +1,21 @@
-# Test report — Rust implementation
+# Test report
 
-## Results
+| Check | Result |
+|---|---|
+| `cargo fmt -- --check` | pass |
+| `cargo clippy --all-targets -- -D warnings` | pass, 0 warnings |
+| `cargo test` | 10 passed, 0 failed |
+| `cargo build --release` (Linux) | pass |
+| Native window launch on Linux | process stayed alive for the full timeout (no crash) |
+| `--web` mode after GUI changes | HTTP 200 on `/` |
+| Browser E2E (earlier, Chromium + Firefox) | 48 page loads, 0 failures, 0 console errors |
 
-| Check | Command | Result |
-|---|---|---|
-| Format | `cargo fmt -- --check` | pass |
-| Lint | `cargo clippy --all-targets -- -D warnings` | pass, 0 warnings |
-| Unit + integration tests | `cargo test` | 10 passed, 0 failed |
-| Release build | `cargo build --release` | pass; binary ~3.9 MB |
-| E2E, Chromium and Firefox | `node legacy-nextjs/e2e-rust.mjs` | 48 page loads, 0 failures, 0 console errors |
-| Data accuracy | displayed figures vs direct `sqlite3` aggregate | exact match |
-| Security headers | `curl -D -` | nosniff, DENY framing, no-referrer, permissions-policy present |
-| Error state | run with a missing `--db-path` | error page rendered |
+## Fixes during the GUI work
+1. egui 0.37 API changes: `App::ui` replaced `App::update`, themed style via `set_style_of`, `Rect::from_min_max`, progress-bar API.
+2. Clippy: boxed the large snapshot enum variant and used struct-update style initialization.
+3. Platform-aware default database paths for Windows and macOS.
+4. CI now builds and tests on Ubuntu, Windows and macOS and uploads each binary.
 
-## E2E details
-- Four routes at six widths (360–1920 px) in both browsers, no horizontal page scroll.
-- Search `?q=greeting` returned matching sessions.
-- Session and daily CSV downloads produced the correct filenames.
-- Screenshots at 390 px and 1440 px were inspected. A first pass showed distorted chart labels on mobile; fixed by generating a dedicated narrow SVG chart.
-
-## Bugs found and fixed
-1. Parallel Rust tests collided on a fixed fixture filename; paths now include nanoseconds.
-2. `cargo fmt` and clippy warnings were resolved (sorting with `Reverse`, `&Path` instead of `&PathBuf`).
-3. Mobile SVG chart text was horizontally squashed by viewBox scaling; a separate 390px chart is now rendered under 640px.
-4. The last x-axis label was clipped; first and last labels now use start/end anchoring.
-5. CI initially still used the Node workflow; replaced with a Rust toolchain workflow.
-6. Stable clippy in CI flagged a manual modulo check that nightly allowed; replaced with `is_multiple_of(3)`. CI now passes all steps.
-
-## Still open
-- WebKit browser test: host libraries missing on this machine and installing them needs root.
-- Cost-per-model estimates (would require a user-supplied pricing file).
+## Open
+- Automated GUI screenshot testing (needs a virtual display in CI).
+- WebKit browser testing (needs root-level host libraries).
