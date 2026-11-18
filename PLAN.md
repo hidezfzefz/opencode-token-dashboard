@@ -17,6 +17,7 @@ Turn the Rust dashboard into a fully native desktop app for Linux, Windows and m
 4. Made the default database path platform-aware (Windows/macOS/Linux). ✓
 5. Verified the window launches and stays open on this machine. ✓
 6. CI matrix builds and tests on Ubuntu, Windows and macOS and uploads binaries. ✓
+7. Auto sync: GUI watches database/WAL fingerprints and reloads on change; web mode meta refresh with configurable interval. ✓
 
 ## Open
 - No GUI screenshot test in CI (would need a virtual display).

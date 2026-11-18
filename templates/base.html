@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  {% if refresh_seconds > 0 %}<meta http-equiv="refresh" content="{{ refresh_seconds }}">{% endif %}
   <title>{{ title }} — OpenCode dashboard</title>
   <meta name="description" content="Local dashboard for OpenCode token usage">
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
@@ -27,6 +28,7 @@
   </header>
   <main class="shell page">
     {% block content %}{% endblock content %}
+    {% if refresh_seconds > 0 %}<p class="stat-meta" style="margin-top:var(--space-5)">Auto sync: this page reloads every {{ refresh_seconds }} seconds. Set OTD_AUTO_REFRESH_SECONDS=0 to disable.</p>{% endif %}
   </main>
 </body>
 </html>

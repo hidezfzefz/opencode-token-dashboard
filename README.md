@@ -50,6 +50,15 @@ opencode-token-dashboard [--web] [--host ADDR] [--port PORT] [--db-path PATH]
 | `--port` | Web server port (default `3000`, or `PORT`) |
 | `--db-path` | Explicit database path (or `OPENCODE_DB_PATH`) |
 
+## Auto sync
+
+The dashboard keeps itself up to date with the OpenCode database:
+
+- **Native GUI:** watches the database, WAL and shared-memory files once a second. When anything changes it reloads the data automatically. Use the **Auto sync** checkbox to turn this off, and the **Last synced** label to see when it last read the database. Changes made while the app is open (for example a new session in OpenCode) appear without clicking Refresh.
+- **Web mode:** pages reload every 15 seconds via a meta refresh. Set `OTD_AUTO_REFRESH_SECONDS=0` to disable, or another number to change the interval. The current interval is shown at the bottom of each page.
+
+Manual **Refresh** is always available in both modes.
+
 ## Database location
 
 The app checks, in order:

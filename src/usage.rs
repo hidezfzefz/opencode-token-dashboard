@@ -221,6 +221,29 @@ pub fn default_db_path() -> PathBuf {
         .join("opencode.db")
 }
 
+/// A cheap fingerprint of the database files. OpenCode writes most changes to
+/// the WAL file, so all three files are checked.
+pub fn db_fingerprint(path: &Path) -> Vec<(u64, u128)> {
+    let mut candidates = vec![path.to_path_buf()];
+    let name = path.to_string_lossy();
+    candidates.push(PathBuf::from(format!("{name}-wal")));
+    candidates.push(PathBuf::from(format!("{name}-shm")));
+
+    let mut result = Vec::new();
+    for candidate in candidates {
+        if let Ok(metadata) = std::fs::metadata(candidate) {
+            let modified = metadata
+                .modified()
+                .ok()
+                .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
+                .map(|duration| duration.as_nanos())
+                .unwrap_or(0);
+            result.push((metadata.len(), modified));
+        }
+    }
+    result
+}
+
 pub fn open_db(path: &Path) -> Result<Connection, String> {
     if !path.is_file() {
         return Err(format!("OpenCode database not found at {}", path.display()));
@@ -515,6 +538,22 @@ mod tests {
         let (path, rows) = fixture();
         assert_eq!(rows.len(), 2);
         assert_eq!(rows[0].counts.input, 20);
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn fingerprint_changes_when_database_changes() {
+        let (path, _rows) = fixture();
+        let before = db_fingerprint(&path);
+        let db = Connection::open(&path).unwrap();
+        db.execute(
+            "INSERT INTO session_message VALUES ('m4','s1','assistant',0,'{}')",
+            [],
+        )
+        .unwrap();
+        drop(db);
+        let after = db_fingerprint(&path);
+        assert_ne!(before, after);
         let _ = fs::remove_file(path);
     }
 

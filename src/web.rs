@@ -22,6 +22,7 @@ use crate::usage::{self, SessionTotals, UsageSnapshot};
 pub struct AppState {
     pub tera: Arc<Tera>,
     pub db_path: PathBuf,
+    pub refresh_seconds: i64,
 }
 
 #[derive(Deserialize)]
@@ -46,6 +47,7 @@ fn render(
 ) -> Response {
     context.insert("title", title);
     context.insert("active", active);
+    context.insert("refresh_seconds", &state.refresh_seconds);
     match state.tera.render(template, context) {
         Ok(html) => (status, Html(html)).into_response(),
         Err(error) => (

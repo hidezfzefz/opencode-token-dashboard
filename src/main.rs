@@ -101,9 +101,14 @@ async fn main() {
     }
 
     println!("Reading database: {}", db_path.display());
+    let refresh_seconds = std::env::var("OTD_AUTO_REFRESH_SECONDS")
+        .ok()
+        .and_then(|value| value.parse().ok())
+        .unwrap_or(15);
     let state = AppState {
         tera: Arc::new(templates()),
         db_path,
+        refresh_seconds,
     };
     let app = web::router(state);
     let address = format!("{host}:{port}");

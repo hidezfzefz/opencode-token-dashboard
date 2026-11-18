@@ -4,7 +4,7 @@
 |---|---|
 | `cargo fmt -- --check` | pass |
 | `cargo clippy --all-targets -- -D warnings` | pass, 0 warnings |
-| `cargo test` | 10 passed, 0 failed |
+| `cargo test` | 11 passed, 0 failed |
 | `cargo build --release` (Linux) | pass |
 | Native window launch on Linux | process stayed alive for the full timeout (no crash) |
 | `--web` mode after GUI changes | HTTP 200 on `/` |
@@ -15,6 +15,11 @@
 2. Clippy: boxed the large snapshot enum variant and used struct-update style initialization.
 3. Platform-aware default database paths for Windows and macOS.
 4. CI now builds and tests on Ubuntu, Windows and macOS and uploads each binary.
+
+## Auto sync verification
+- Database fingerprint changes when the underlying file changes: unit test passes.
+- Web mode emits `<meta http-equiv="refresh" content="15">` by default and no tag when `OTD_AUTO_REFRESH_SECONDS=0`.
+- Native window still launches with auto sync enabled; no crash.
 
 ## Open
 - Automated GUI screenshot testing (needs a virtual display in CI).

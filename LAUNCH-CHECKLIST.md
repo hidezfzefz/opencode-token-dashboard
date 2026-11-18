@@ -10,6 +10,7 @@
 - [x] Four tabs, refresh, search, sort, chart and CSV export in the native app.
 - [x] Original website preserved in `--web` mode.
 - [x] Platform-specific default database paths.
+- [x] Auto sync: GUI reloads on database changes; web mode auto-refreshes on an interval.
 
 ## Security
 - [x] Read-only database access, tested.

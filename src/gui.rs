@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::time::{Duration, Instant};
 
 use eframe::egui;
 use egui::{Color32, Stroke};
@@ -81,6 +82,10 @@ struct DashboardApp {
     all_days: bool,
     notice: Option<String>,
     styled: bool,
+    auto_sync: bool,
+    last_check: Instant,
+    last_fingerprint: Vec<(u64, u128)>,
+    last_synced: Option<String>,
 }
 
 impl DashboardApp {
@@ -90,7 +95,7 @@ impl DashboardApp {
             Err(error) => Data::Error(error),
         };
         Self {
-            db_path,
+            db_path: db_path.clone(),
             data,
             tab: Tab::Overview,
             search: String::new(),
@@ -99,14 +104,24 @@ impl DashboardApp {
             all_days: false,
             notice: None,
             styled: false,
+            auto_sync: true,
+            last_check: Instant::now(),
+            last_fingerprint: usage::db_fingerprint(&db_path),
+            last_synced: Some(now_label()),
         }
     }
 
-    fn refresh(&mut self) {
+    fn reload(&mut self) {
         self.data = match usage::get_usage(&self.db_path) {
             Ok(snapshot) => Data::Ready(Box::new(snapshot)),
             Err(error) => Data::Error(error),
         };
+        self.last_fingerprint = usage::db_fingerprint(&self.db_path);
+        self.last_synced = Some(now_label());
+    }
+
+    fn refresh(&mut self) {
+        self.reload();
         self.notice = Some("Reloaded from the database".to_string());
     }
 
@@ -116,6 +131,10 @@ impl DashboardApp {
             Err(error) => self.notice = Some(format!("Could not save file: {error}")),
         }
     }
+}
+
+fn now_label() -> String {
+    chrono::Local::now().format("%H:%M:%S").to_string()
 }
 
 fn style() -> egui::Style {
@@ -269,11 +288,24 @@ impl eframe::App for DashboardApp {
             self.styled = true;
         }
 
+        if self.auto_sync {
+            let now = Instant::now();
+            if now.duration_since(self.last_check) >= Duration::from_secs(1) {
+                self.last_check = now;
+                let fingerprint = usage::db_fingerprint(&self.db_path);
+                if fingerprint != self.last_fingerprint {
+                    self.reload();
+                }
+            }
+            ctx.request_repaint_after(Duration::from_millis(500));
+        }
+
         egui::Frame::new()
             .inner_margin(egui::Margin::same(16))
             .show(ui, |ui| {
                 ui.horizontal(|ui| {
                     ui.heading(egui::RichText::new("token usage").size(22.0));
+                    ui.checkbox(&mut self.auto_sync, "Auto sync");
                     if ui.button("Refresh").clicked() {
                         self.refresh();
                     }
@@ -283,6 +315,13 @@ impl eframe::App for DashboardApp {
                         .size(12.0)
                         .color(Color32::from_gray(150)),
                 );
+                if let Some(time) = &self.last_synced {
+                    ui.label(
+                        egui::RichText::new(format!("Last synced {time}"))
+                            .size(12.0)
+                            .color(Color32::from_gray(150)),
+                    );
+                }
                 if let Some(notice) = &self.notice {
                     ui.label(
                         egui::RichText::new(notice)
