@@ -5,7 +5,8 @@
 name="OpenCode token dashboard"
 description="Local dashboard for OpenCode token usage"
 
-command="/usr/local/bin/opencode-token-dashboard"
+# Use /usr/local/bin/opencode-token-dashboard instead if you installed system-wide.
+command="/home/user/.local/bin/opencode-token-dashboard"
 command_args="--host 127.0.0.1 --port 3000"
 command_background="yes"
 pidfile="/run/${RC_SVCNAME}.pid"

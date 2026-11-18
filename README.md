@@ -43,28 +43,37 @@ Install a Rust toolchain (a C compiler is already part of a normal Gentoo system
 emerge --ask dev-lang/rust
 ```
 
-Build and install the binary:
+Build the binary, then copy it somewhere on your `PATH`. Installing to `~/.local/bin` needs no root access:
 
 ```sh
 git clone https://github.com/hidezfzefz/opencode-token-dashboard.git
 cd opencode-token-dashboard
 cargo build --release
-install -m 755 target/release/opencode-token-dashboard /usr/local/bin/
+install -m 755 target/release/opencode-token-dashboard ~/.local/bin/
 ```
+
+If you specifically want a system-wide install and have root, use `sudo install -m 755 target/release/opencode-token-dashboard /usr/local/bin/` instead. The `/usr/local/bin` path only works after that install step; until then, use the path below.
 
 Run it as your normal user so it can read your OpenCode database:
 
 ```sh
-OPENCODE_DB_PATH=/home/youruser/.local/share/opencode/opencode.db \
-  /usr/local/bin/opencode-token-dashboard --host 127.0.0.1 --port 3000
+OPENCODE_DB_PATH=/home/user/.local/share/opencode/opencode.db \
+  ~/.local/bin/opencode-token-dashboard --host 127.0.0.1 --port 3000
+```
+
+You can also skip installing and run the build output directly:
+
+```sh
+OPENCODE_DB_PATH=/home/user/.local/share/opencode/opencode.db \
+  ./target/release/opencode-token-dashboard --host 127.0.0.1 --port 3000
 ```
 
 An OpenRC service file is included at `contrib/opencode-token-dashboard.initd`:
 
 ```sh
-cp contrib/opencode-token-dashboard.initd /etc/init.d/opencode-token-dashboard
-chmod +x /etc/init.d/opencode-token-dashboard
-# edit OPENCODE_DB_PATH and command_args in the file, then:
+sudo cp contrib/opencode-token-dashboard.initd /etc/init.d/opencode-token-dashboard
+sudo chmod +x /etc/init.d/opencode-token-dashboard
+# edit OPENCODE_DB_PATH and command_args in the file if needed, then:
 rc-update add opencode-token-dashboard default
 rc-service opencode-token-dashboard start
 ```
