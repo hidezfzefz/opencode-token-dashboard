@@ -6,10 +6,11 @@ Date: 2026-11-18. Environment: local Next.js dev server on `localhost:3000`, Nod
 
 | Check | Command | Result |
 |---|---|---|
-| Unit + fixture-DB integration tests | `npm test` | 18 passed (3 files) |
+| Unit + fixture-DB integration tests | `npm test` | 21 passed (3 files) |
 | Type check | `npx tsc --noEmit` | pass |
 | Lint | `npm run lint` | pass |
 | Production build | `npm run build` | pass, 4 routes |
+| CI | `.github/workflows/ci.yml` | lint, type check, 21 tests and build on push/PR |
 | Design lint | `node <hallmark>/scripts/sloplint.mjs src --scope app --genre modern-minimal --url http://localhost:3000/` | 0 FAIL, 0 WARN, 2 WAIVED (7b: declared absolute dark surface) |
 | E2E + responsive | `npm run test:e2e` | 48 page loads (4 routes × 6 widths × 2 browsers), 0 failures |
 | Cross-browser | `BROWSERS=chromium,firefox npm run test:e2e` | Chromium and Firefox both pass, including CSV export, zoom and reduced motion |
@@ -23,7 +24,8 @@ Date: 2026-11-18. Environment: local Next.js dev server on `localhost:3000`, Nod
 - Sort `?sort=input&dir=asc` applies and renders the expected column.
 - Chart range `?range=all` renders the stats and chart.
 - No console errors or uncaught exceptions on any page.
-- CSV export produces a header plus one row per visible session, with correct escaping and ISO timestamps.
+- Session CSV export produces a header plus one row per visible session, with correct escaping and ISO timestamps.
+- Daily CSV export produces a header plus one row per day in the selected range.
 - 200% zoom approximation (CSS zoom 2 at a 1440px viewport) produces no horizontal page scroll.
 - `prefers-reduced-motion: reduce` disables the animation on a probe element.
 - Screenshots saved under `test-results/` (gitignored) at 390px and 1440px and inspected by eye.

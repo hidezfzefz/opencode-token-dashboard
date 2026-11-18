@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { ExportButton } from "@/components/export-button";
 import { RefreshButton } from "@/components/refresh-button";
 import { Stat } from "@/components/stat";
 import { UsageChart } from "@/components/usage-chart";
+import { dailyToCsv } from "@/lib/csv";
 import { formatCompact, formatNumber, formatPercent } from "@/lib/format";
 import { getUsage } from "@/lib/usage";
 
@@ -17,6 +19,7 @@ export default async function OverviewPage({
   const days = range === "all" ? usage.perDay : usage.perDay.slice(-30);
   const chartData = days.map((day) => ({ day: day.day, fresh: day.fresh, cache: day.cacheRead + day.cacheWrite }));
   const topSessions = usage.sessions.slice(0, 8);
+  const dailyRows = [...days].reverse();
   const allTimeTotal = usage.allTime.total || 1;
 
   return (
@@ -30,7 +33,7 @@ export default async function OverviewPage({
       </div>
 
       <div className="grid-stats">
-        <Stat label="Today, all tokens" value={usage.today.total} meta={`${formatCompact(usage.today.cacheRead)} cache read`} />
+        <Stat label="Today, all tokens" value={usage.today.total} meta={`Yesterday ${formatCompact(usage.yesterday.total)}`} />
         <Stat label="Today, fresh" value={usage.today.fresh} meta={`${formatPercent(usage.today.fresh, usage.today.total || 1)} of today`} />
         <Stat label="All time, all tokens" value={usage.allTime.total} meta={`${formatNumber(usage.messageCount)} assistant messages`} />
         <Stat label="All time, fresh" value={usage.allTime.fresh} meta={`${formatPercent(usage.allTime.fresh, allTimeTotal)} of all time`} />
@@ -49,7 +52,47 @@ export default async function OverviewPage({
         ) : (
           <UsageChart data={chartData} />
         )}
-        <p className="stat-meta">Fresh means input, output and reasoning. Cache reads are shown separately.</p>
+        <p className="stat-meta">
+          Previous 7 days daily average: {formatCompact(usage.sevenDayAverage.total)} tokens. Yesterday: {formatCompact(usage.yesterday.total)} tokens. Fresh means input, output and reasoning.
+        </p>
+      </section>
+
+      <section className="card" style={{ marginBottom: "var(--space-5)" }}>
+        <div className="card-head">
+          <h2 className="card-title">Daily detail</h2>
+          <ExportButton
+            csv={dailyToCsv(dailyRows)}
+            filename="opencode-token-usage-daily.csv"
+            label="Export daily CSV"
+            disabled={dailyRows.length === 0}
+          />
+        </div>
+        {dailyRows.length === 0 ? (
+          <div className="empty">No assistant messages found in the database yet.</div>
+        ) : (
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th scope="col">Day</th>
+                  <th scope="col" className="num">Fresh</th>
+                  <th scope="col" className="num">Cache read</th>
+                  <th scope="col" className="num">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dailyRows.map((day) => (
+                  <tr key={day.day}>
+                    <td>{day.day}</td>
+                    <td className="num">{formatCompact(day.fresh)}</td>
+                    <td className="num">{formatCompact(day.cacheRead)}</td>
+                    <td className="num">{formatNumber(day.total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
 
       <section className="card">

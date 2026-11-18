@@ -42,7 +42,7 @@ There are no secrets and no `.env` file is required. The database is always open
 
 ## What it shows
 
-- **Overview** — today and all-time totals, fresh vs cached tokens, a daily stacked chart (last 30 days or all time), and the top sessions.
+- **Overview** — today and all-time totals (with yesterday and the previous 7-day daily average), fresh vs cached tokens, a daily stacked chart (last 30 days or all time), a daily detail table with its own CSV export, and the top sessions.
 - **Sessions** — every session with input, output, reasoning, cache read and total, searchable by title/model/project, sortable by any column, and exportable as CSV.
 - **Models** — totals and share of usage per model and variant.
 - **Projects** — totals and share of usage per project directory.
@@ -60,6 +60,8 @@ npm run lint                # ESLint
 npx tsc --noEmit            # TypeScript
 npm run build               # Production build
 ```
+
+CI runs lint, type check, unit tests and the production build on every push and pull request via `.github/workflows/ci.yml`.
 
 `npm run test:e2e` needs a dev server on `http://localhost:3000` and a Playwright browser (`npx playwright install chromium`). It checks four routes at six viewport widths, search, sorting, chart ranges, CSV export, 200% zoom, reduced motion and console errors. Use `BROWSERS=chromium,firefox npm run test:e2e` to run it in both browsers. WebKit needs system libraries that must be installed as root (`npx playwright install-deps webkit`).
 

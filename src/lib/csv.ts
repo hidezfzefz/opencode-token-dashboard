@@ -1,6 +1,6 @@
-import type { SessionTotals } from "./usage";
+import type { SessionTotals, Totals } from "./usage";
 
-const HEADER = [
+const SESSION_HEADER = [
   "Session",
   "Last active",
   "Model",
@@ -15,14 +15,21 @@ const HEADER = [
   "Total",
 ];
 
+const DAILY_HEADER = ["Day", "Fresh", "Input", "Output", "Reasoning", "Cache read", "Cache write", "Total"];
+
 export function escapeCsvCell(value: string | number): string {
   const text = String(value);
   return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
+export function toCsv(header: string[], rows: Array<Array<string | number>>): string {
+  return [header, ...rows].map((row) => row.map(escapeCsvCell).join(",")).join("\n");
+}
+
 export function sessionsToCsv(rows: SessionTotals[]): string {
-  const lines = rows.map((row) =>
-    [
+  return toCsv(
+    SESSION_HEADER,
+    rows.map((row) => [
       row.label,
       new Date(row.updatedAt).toISOString(),
       row.model,
@@ -35,9 +42,22 @@ export function sessionsToCsv(rows: SessionTotals[]): string {
       row.cacheWrite,
       row.fresh,
       row.total,
-    ]
-      .map(escapeCsvCell)
-      .join(","),
+    ]),
   );
-  return [HEADER.join(","), ...lines].join("\n");
+}
+
+export function dailyToCsv(rows: Array<Totals & { day: string }>): string {
+  return toCsv(
+    DAILY_HEADER,
+    rows.map((row) => [
+      row.day,
+      row.fresh,
+      row.input,
+      row.output,
+      row.reasoning,
+      row.cacheRead,
+      row.cacheWrite,
+      row.total,
+    ]),
+  );
 }

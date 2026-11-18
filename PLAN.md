@@ -34,6 +34,7 @@
 12. README with setup, env vars, screenshots description, and limitations. ✓
 13. Create GitHub repo and push; commit history with clear messages. ✓ https://github.com/hidezfzefz/opencode-token-dashboard
 14. Re-check round: verified displayed figures against direct SQL, added CSV export with unit tests, closed cross-browser and zoom/reduced-motion gaps. ✓
+15. Second improvement round: yesterday and 7-day average stats, daily detail table with its own CSV export, generic CSV helpers, 21 tests, and GitHub Actions CI. ✓
 
 ## Convio stage checkpoints
 - [x] Discover — BRIEF.md written.

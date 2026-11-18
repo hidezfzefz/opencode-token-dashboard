@@ -1,5 +1,6 @@
 import { ExportButton } from "@/components/export-button";
 import { RefreshButton } from "@/components/refresh-button";
+import { sessionsToCsv } from "@/lib/csv";
 import { formatCompact, formatNumber } from "@/lib/format";
 import { getUsage, type SessionTotals } from "@/lib/usage";
 
@@ -64,7 +65,7 @@ export default async function SessionsPage({
           <p className="page-subtitle">{formatNumber(usage.sessions.length)} sessions with assistant messages</p>
         </div>
         <div className="nav" aria-label="Session actions">
-          <ExportButton rows={rows} />
+          <ExportButton csv={sessionsToCsv(rows)} filename="opencode-token-usage-sessions.csv" disabled={rows.length === 0} />
           <RefreshButton />
         </div>
       </div>

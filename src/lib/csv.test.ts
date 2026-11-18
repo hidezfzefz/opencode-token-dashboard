@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { escapeCsvCell, sessionsToCsv } from "./csv";
+import { dailyToCsv, escapeCsvCell, sessionsToCsv, toCsv } from "./csv";
 import type { SessionTotals } from "./usage";
 
 const row: SessionTotals = {
@@ -44,5 +44,29 @@ describe("sessionsToCsv", () => {
 
   it("writes only the header when there is no data", () => {
     expect(sessionsToCsv([]).split("\n")).toHaveLength(1);
+  });
+});
+
+describe("toCsv and dailyToCsv", () => {
+  it("writes a header and escaped rows", () => {
+    expect(toCsv(["A", "B"], [[1, "x,y"]])).toBe("A,B\n1,\"x,y\"");
+  });
+
+  it("writes daily token columns", () => {
+    const csv = dailyToCsv([
+      {
+        day: "2026-11-18",
+        input: 10,
+        output: 5,
+        reasoning: 2,
+        cacheRead: 100,
+        cacheWrite: 0,
+        fresh: 17,
+        total: 117,
+      },
+    ]);
+    const lines = csv.split("\n");
+    expect(lines[0]).toBe("Day,Fresh,Input,Output,Reasoning,Cache read,Cache write,Total");
+    expect(lines[1]).toBe("2026-11-18,17,10,5,2,100,0,117");
   });
 });

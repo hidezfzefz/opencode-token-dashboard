@@ -41,6 +41,8 @@ export interface UsageSnapshot {
   dbPath: string;
   messageCount: number;
   today: Totals;
+  yesterday: Totals;
+  sevenDayAverage: Totals;
   allTime: Totals;
   perDay: Array<Totals & { day: string }>;
   sessions: SessionTotals[];
@@ -176,10 +178,31 @@ export function aggregate(rows: UsageRow[], path: string, now = new Date()): Usa
 
   const byTotal = <T extends { total: number }>(a: T, b: T) => b.total - a.total;
 
+  const localMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterdayCounts: Counts = { ...ZERO };
+  const sevenDayCounts: Counts = { ...ZERO };
+  for (let offset = 1; offset <= 7; offset += 1) {
+    const date = new Date(localMidnight);
+    date.setDate(date.getDate() - offset);
+    const counts = days.get(dayKey(date.getTime()));
+    if (!counts) continue;
+    if (offset === 1) add(yesterdayCounts, counts);
+    add(sevenDayCounts, counts);
+  }
+  const average: Counts = {
+    input: Math.round(sevenDayCounts.input / 7),
+    output: Math.round(sevenDayCounts.output / 7),
+    reasoning: Math.round(sevenDayCounts.reasoning / 7),
+    cacheRead: Math.round(sevenDayCounts.cacheRead / 7),
+    cacheWrite: Math.round(sevenDayCounts.cacheWrite / 7),
+  };
+
   return {
     dbPath: path,
     messageCount: rows.length,
     today: withTotals(today),
+    yesterday: withTotals(yesterdayCounts),
+    sevenDayAverage: withTotals(average),
     allTime: withTotals(allTime),
     perDay: [...days.entries()]
       .map(([day, counts]) => finalize({ day, ...counts, fresh: 0, total: 0 }))

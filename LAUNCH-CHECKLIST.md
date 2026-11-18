@@ -28,6 +28,7 @@
 - [x] README with local run instructions, configuration, tests, rollback and limitations.
 - [x] TEST-PLAN.md, TEST-REPORT.md and SECURITY-REVIEW.md written and committed.
 - [x] Source pushed to GitHub (see the repository URL in the final handover).
+- [x] CI workflow runs lint, type check, tests and build on every push and pull request.
 
 ## Still open (not blocking a local tool)
 - WebKit cross-browser run — browser binary installed, but host libraries are missing and installing them requires root.

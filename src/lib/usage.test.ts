@@ -84,6 +84,11 @@ describe("aggregate", () => {
     expect(snapshot.today).toMatchObject({ input: 10, output: 5, fresh: 15, cacheRead: 100, total: 115 });
   });
 
+  it("computes yesterday and the previous 7-day daily average", () => {
+    expect(snapshot.yesterday).toMatchObject({ input: 20, cacheRead: 200, total: 226 });
+    expect(snapshot.sevenDayAverage).toMatchObject({ input: 3, output: 1, cacheRead: 29, total: 33 });
+  });
+
   it("buckets by local calendar day", () => {
     expect(snapshot.perDay).toEqual([
       expect.objectContaining({ day: "2026-11-17", input: 20 }),

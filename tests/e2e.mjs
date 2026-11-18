@@ -76,6 +76,13 @@ for (const name of BROWSERS) {
 
   await page.goto(BASE + "/?range=all", { waitUntil: "networkidle" });
   if (!(await page.getByText("All time, all tokens").count())) failures.push(`${name} range=all: missing stats`);
+  const [dailyDownload] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button", { name: "Export daily CSV" }).click(),
+  ]);
+  const dailyCsv = readFileSync(await dailyDownload.path(), "utf8");
+  if (!dailyCsv.startsWith("Day,Fresh,Input")) failures.push(`${name} daily export: bad CSV header`);
+  notes.push(`${name}: daily CSV export contained ${dailyCsv.trim().split("\n").length - 1} days`);
 
   if (consoleErrors.length) failures.push(`${name} console errors: ${consoleErrors.slice(0, 2).join(" | ")}`);
   else notes.push(`${name}: no console errors across all pages`);
