@@ -1,3 +1,4 @@
+import { ExportButton } from "@/components/export-button";
 import { RefreshButton } from "@/components/refresh-button";
 import { formatCompact, formatNumber } from "@/lib/format";
 import { getUsage, type SessionTotals } from "@/lib/usage";
@@ -62,7 +63,10 @@ export default async function SessionsPage({
           <h1 className="page-title">Sessions</h1>
           <p className="page-subtitle">{formatNumber(usage.sessions.length)} sessions with assistant messages</p>
         </div>
-        <RefreshButton />
+        <div className="nav" aria-label="Session actions">
+          <ExportButton rows={rows} />
+          <RefreshButton />
+        </div>
       </div>
 
       <form action="/sessions" method="get" style={{ marginBottom: "var(--space-4)" }}>

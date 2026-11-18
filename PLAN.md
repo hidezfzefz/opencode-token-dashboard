@@ -29,10 +29,11 @@
 9. Commit milestone 2. ✓ Hallmark sloplint: 0 FAIL, 0 WARN, 2 WAIVED (7b, declared absolute surface).
 
 ## Milestone 3 — Quality and ship
-10. Security review: read-only DB, no prompt content rendered, no network calls, path from env validated. ✓ checklist.
-11. Tests: expand Vitest coverage; run `npm test`, `npm run lint`, `npm run build`. ✓ all green.
-12. README with setup, env vars, screenshots description, and limitations.
-13. Create GitHub repo and push; commit history with clear messages.
+10. Security review: read-only DB, no prompt content rendered, no network calls, path from env validated. ✓ SECURITY-REVIEW.md.
+11. Tests: 18 Vitest tests + Playwright E2E on Chromium and Firefox (responsive, search, sort, CSV export, zoom, reduced motion). ✓ all green.
+12. README with setup, env vars, screenshots description, and limitations. ✓
+13. Create GitHub repo and push; commit history with clear messages. ✓ https://github.com/hidezfzefz/opencode-token-dashboard
+14. Re-check round: verified displayed figures against direct SQL, added CSV export with unit tests, closed cross-browser and zoom/reduced-motion gaps. ✓
 
 ## Convio stage checkpoints
 - [x] Discover — BRIEF.md written.

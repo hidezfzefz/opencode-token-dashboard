@@ -6,12 +6,13 @@ Date: 2026-11-18. Environment: local Next.js dev server on `localhost:3000`, Nod
 
 | Check | Command | Result |
 |---|---|---|
-| Unit + fixture-DB integration tests | `npm test` | 14 passed (2 files) |
+| Unit + fixture-DB integration tests | `npm test` | 18 passed (3 files) |
 | Type check | `npx tsc --noEmit` | pass |
 | Lint | `npm run lint` | pass |
 | Production build | `npm run build` | pass, 4 routes |
 | Design lint | `node <hallmark>/scripts/sloplint.mjs src --scope app --genre modern-minimal --url http://localhost:3000/` | 0 FAIL, 0 WARN, 2 WAIVED (7b: declared absolute dark surface) |
-| E2E + responsive | `npm run test:e2e` | 24 page loads (4 routes × 6 widths), 0 failures |
+| E2E + responsive | `npm run test:e2e` | 48 page loads (4 routes × 6 widths × 2 browsers), 0 failures |
+| Cross-browser | `BROWSERS=chromium,firefox npm run test:e2e` | Chromium and Firefox both pass, including CSV export, zoom and reduced motion |
 | Lighthouse | in-app browser Lighthouse on `/` | accessibility 1.00, best practices 1.00, SEO 1.00, 0 axe failures |
 | Internal links | Playwright crawl of all `a[href]` | 14 links checked, 0 broken |
 | Error state | `next start` with `OPENCODE_DB_PATH` pointing at a missing file | error boundary shows "Could not load token usage" and a working "Try again" button |
@@ -22,6 +23,9 @@ Date: 2026-11-18. Environment: local Next.js dev server on `localhost:3000`, Nod
 - Sort `?sort=input&dir=asc` applies and renders the expected column.
 - Chart range `?range=all` renders the stats and chart.
 - No console errors or uncaught exceptions on any page.
+- CSV export produces a header plus one row per visible session, with correct escaping and ISO timestamps.
+- 200% zoom approximation (CSS zoom 2 at a 1440px viewport) produces no horizontal page scroll.
+- `prefers-reduced-motion: reduce` disables the animation on a probe element.
 - Screenshots saved under `test-results/` (gitignored) at 390px and 1440px and inspected by eye.
 
 ## Bugs found and fixed during testing
@@ -32,8 +36,7 @@ Date: 2026-11-18. Environment: local Next.js dev server on `localhost:3000`, Nod
 5. The chart areas appeared blank in the first screenshot because Recharts was still animating; confirmed correct after animation completed. No code change needed.
 
 ## Not run (with reasons)
-- Firefox and WebKit: only Chromium is installed in this environment. The app uses standard React/CSS with no browser-specific APIs; cross-browser verification is still open.
-- 200% browser zoom and reduced-motion emulation: not available through the test tooling here. CSS uses a `prefers-reduced-motion` fallback and a fluid type scale, but explicit emulation remains open.
+- WebKit: the Playwright WebKit binary is installed, but this machine lacks the host libraries it needs (`libicu*.so.74`, `libsystemd.so.0`, `libxml2.so.2`, `libgstcodecparsers-1.0.so.0`, `libharfbuzz-icu.so.0`, `libjpeg.so.8`, `libmanette-0.2.so.0`, `libenchant-2.so.2`). Installing them needs root access, which is not available here. Chromium and Firefox both pass the full suite.
 - OWASP ZAP dynamic scan: no public preview deployment exists; the app is local-only.
 - Semgrep: engine crashed in this environment (exit -11), documented in SECURITY-REVIEW.md.
 
@@ -44,5 +47,6 @@ npm run lint
 npx tsc --noEmit
 npm run build
 npm run dev
-npm run test:e2e
+npm run test:e2e                              # Chromium
+BROWSERS=chromium,firefox npm run test:e2e     # both working browsers
 ```

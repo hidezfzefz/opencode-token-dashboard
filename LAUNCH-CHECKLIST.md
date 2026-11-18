@@ -30,6 +30,5 @@
 - [x] Source pushed to GitHub (see the repository URL in the final handover).
 
 ## Still open (not blocking a local tool)
-- Firefox and WebKit cross-browser runs.
-- Explicit 200% zoom and reduced-motion emulation.
+- WebKit cross-browser run — browser binary installed, but host libraries are missing and installing them requires root.
 - Unpatchable dev-only `picomatch` advisory (documented in SECURITY-REVIEW.md).
