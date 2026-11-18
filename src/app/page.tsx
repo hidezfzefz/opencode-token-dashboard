@@ -5,6 +5,8 @@ import { UsageChart } from "@/components/usage-chart";
 import { formatCompact, formatNumber, formatPercent } from "@/lib/format";
 import { getUsage } from "@/lib/usage";
 
+export const instant = false;
+
 export default async function OverviewPage({
   searchParams,
 }: {

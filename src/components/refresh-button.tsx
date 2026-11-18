@@ -14,7 +14,6 @@ export function RefreshButton() {
       className="btn"
       onClick={() => startTransition(() => router.refresh())}
       disabled={pending}
-      aria-label="Reload token usage from the database"
     >
       <RefreshCw size={15} strokeWidth={1.5} className={pending ? "spin" : undefined} aria-hidden="true" />
       Refresh

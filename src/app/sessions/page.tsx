@@ -2,6 +2,8 @@ import { RefreshButton } from "@/components/refresh-button";
 import { formatCompact, formatNumber } from "@/lib/format";
 import { getUsage, type SessionTotals } from "@/lib/usage";
 
+export const instant = false;
+
 type SortKey = "label" | "updatedAt" | "input" | "output" | "reasoning" | "cacheRead" | "fresh" | "total";
 
 const columns: Array<{ key: SortKey; label: string; numeric: boolean }> = [

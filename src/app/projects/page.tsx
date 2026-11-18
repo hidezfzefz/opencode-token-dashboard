@@ -3,6 +3,8 @@ import { ShareBar } from "@/components/share-bar";
 import { formatCompact, formatNumber, formatPercent } from "@/lib/format";
 import { getUsage } from "@/lib/usage";
 
+export const instant = false;
+
 export default async function ProjectsPage() {
   const usage = await getUsage();
   const rows = usage.projects;

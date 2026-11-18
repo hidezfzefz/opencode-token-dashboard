@@ -109,9 +109,6 @@ body {
 }
 
 .topbar {
-  position: sticky;
-  top: 0;
-  z-index: 20;
   border-bottom: 1px solid var(--cv-line);
   background: var(--cv-topbar);
 }
@@ -127,6 +124,8 @@ body {
 .wordmark {
   display: inline-flex;
   align-items: center;
+  flex-shrink: 0;
+  white-space: nowrap;
   gap: var(--space-2);
   color: var(--cv-text);
   font-size: var(--text-body);
@@ -149,6 +148,17 @@ body {
   display: flex;
   align-items: center;
   gap: var(--space-1);
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.nav::-webkit-scrollbar {
+  display: none;
+}
+
+.nav-link {
+  flex-shrink: 0;
 }
 
 .nav-link {
@@ -183,13 +193,14 @@ body {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: var(--space-4);
   margin-bottom: var(--space-5);
 }
 
 .page-title {
   margin: 0;
-  font-size: var(--text-display);
+  font-size: clamp(32px, 8vw, var(--text-display));
   font-weight: 400;
   line-height: 1.1;
   letter-spacing: -0.04em;
@@ -334,7 +345,7 @@ body {
 
 .table th {
   position: sticky;
-  top: var(--topbar-height);
+  top: 0;
   padding: var(--space-3) var(--space-3);
   border-bottom: 1px solid var(--cv-line);
   color: var(--cv-text-50);
