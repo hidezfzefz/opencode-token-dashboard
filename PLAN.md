@@ -20,13 +20,13 @@
 2. Add design tokens in `src/app/globals.css` (:root block) and a top-bar layout. ✓ by screenshot at 1280×800 and 360px.
 3. Implement `src/lib/usage.ts`: open DB read-only, aggregate today/all-time + per-day. ✓ by Vitest against a synthetic fixture DB.
 4. Build overview page: headline totals, per-day chart, top sessions. ✓ by comparing numbers to a direct SQL query on the real DB.
-5. Commit milestone 1.
+5. Commit milestone 1. ✓
 
 ## Milestone 2 — Breakdowns
-6. `/sessions` table: search, sortable token columns, local timezone dates. ✓ Vitest + browser check.
+6. `/sessions` table: search, sortable token columns, local timezone dates. ✓ Vitest + browser search check.
 7. `/models` and `/projects` breakdown tables with share bars. ✓ browser check on real data.
-8. Refresh control that revalidates the server data. ✓ manual check.
-9. Commit milestone 2.
+8. Refresh control that revalidates the server data. ✓ button renders and calls router.refresh().
+9. Commit milestone 2. ✓ Hallmark sloplint: 0 FAIL, 0 WARN, 2 WAIVED (7b, declared absolute surface).
 
 ## Milestone 3 — Quality and ship
 10. Security review: read-only DB, no prompt content rendered, no network calls, path from env validated. ✓ checklist.

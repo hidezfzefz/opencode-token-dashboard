@@ -8,7 +8,7 @@ export function defaultDbPath(): string {
 }
 
 export function openUsageDb(path: string = defaultDbPath()): DatabaseSync {
-  if (!existsSync(path) || !statSync(path).isFile()) {
+  if (!existsSync(/* turbopackIgnore: true */ path) || !statSync(/* turbopackIgnore: true */ path).isFile()) {
     throw new Error(`OpenCode database not found at ${path}`);
   }
   return new DatabaseSync(path, { readOnly: true });

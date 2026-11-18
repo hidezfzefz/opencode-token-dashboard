@@ -1,3 +1,5 @@
+/* Hallmark · v2.0.0 · app screens · Convio Design · surface: absolute · pre-emit critique: P4 H4 E5 S4 R4 V4 · weakest: S, this is a tool not a product story; answered with real figures and a dense ledger */
+/* Hallmark · waive 7b · --cv-bg is the declared Convio Design page colour · the project design system fixes the dark tool surface */
 /* token usage — Convio Design tokens, dark and calm. All colour and type lives here. */
 @import "tailwindcss";
 
@@ -42,6 +44,11 @@
   --cv-font: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
   --cv-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   --cv-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --cv-glow: rgba(53, 63, 68, 0.35);
+  --cv-focus: rgba(255, 255, 255, 0.6);
+  --cv-topbar: rgba(0, 0, 0, 0.72);
+  --cv-hover: rgba(255, 255, 255, 0.08);
+  --topbar-height: 56px;
 
   --space-1: 4px;
   --space-2: 8px;
@@ -79,12 +86,12 @@ body {
   min-height: 100vh;
   font: 400 var(--text-body) / 1.5 var(--cv-font);
   letter-spacing: -0.01em;
-  background: radial-gradient(1200px 500px at 50% -10%, rgba(53, 63, 68, 0.35), transparent 70%),
+  background: radial-gradient(1200px 500px at 50% -10%, var(--cv-glow), transparent 70%),
     var(--cv-bg);
 }
 
 :focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline: 2px solid var(--cv-focus);
   outline-offset: 2px;
 }
 
@@ -106,8 +113,7 @@ body {
   top: 0;
   z-index: 20;
   border-bottom: 1px solid var(--cv-line);
-  background: rgba(0, 0, 0, 0.72);
-  backdrop-filter: blur(12px);
+  background: var(--cv-topbar);
 }
 
 .topbar-inner {
@@ -115,7 +121,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  min-height: 56px;
+  min-height: var(--topbar-height);
 }
 
 .wordmark {
@@ -157,7 +163,8 @@ body {
   transition: background 180ms var(--cv-ease), color 180ms var(--cv-ease);
 }
 
-.nav-link:hover {
+.nav-link:hover,
+.nav-link:active {
   background: var(--cv-raised);
   color: var(--cv-text);
 }
@@ -272,8 +279,9 @@ body {
   transition: background 180ms var(--cv-ease);
 }
 
-.btn:hover {
-  background: rgba(255, 255, 255, 0.08);
+.btn:hover,
+.btn:active {
+  background: var(--cv-hover);
 }
 
 .btn:disabled {
@@ -326,7 +334,7 @@ body {
 
 .table th {
   position: sticky;
-  top: 0;
+  top: var(--topbar-height);
   padding: var(--space-3) var(--space-3);
   border-bottom: 1px solid var(--cv-line);
   color: var(--cv-text-50);
@@ -395,6 +403,14 @@ body {
 @keyframes pulse {
   0%, 100% { opacity: 0.45; }
   50% { opacity: 1; }
+}
+
+.spin {
+  animation: spin 900ms linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 @media (prefers-reduced-motion: reduce) {
