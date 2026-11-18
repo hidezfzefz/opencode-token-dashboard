@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import "./globals.css";
 import { TopBar } from "@/components/top-bar";
 
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
   description: "A local dashboard for OpenCode token usage.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
