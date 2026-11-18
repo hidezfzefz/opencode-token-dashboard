@@ -1,34 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# opencode-token-dashboard
 
-## Getting Started
+A local-first dashboard for [OpenCode](https://opencode.ai) token usage. It reads OpenCode's own SQLite database and shows today's and all-time totals, a daily usage chart, and breakdowns by session, model and project.
 
-First, run the development server:
+Nothing is uploaded, no account is needed, and the database is opened read-only.
 
-```bash
+## Requirements
+
+- Node.js 22 or newer (uses the built-in `node:sqlite` module; developed on Node 26)
+- npm
+- An existing OpenCode database, normally at `~/.local/share/opencode/opencode.db`
+
+## Run it locally
+
+```sh
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open <http://localhost:3000>.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+For a production-style local run:
 
-## Learn More
+```sh
+npm run build
+npm start
+```
 
-To learn more about Next.js, take a look at the following resources:
+### Configuration
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Variable | Default | Purpose |
+|---|---|---|
+| `OPENCODE_DB_PATH` | `~/.local/share/opencode/opencode.db` | Path to the OpenCode SQLite database to read |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Example:
 
-## Deploy on Vercel
+```sh
+OPENCODE_DB_PATH=/path/to/opencode.db npm run dev
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+There are no secrets and no `.env` file is required. The database is always opened with `readOnly: true`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## What it shows
+
+- **Overview** — today and all-time totals, fresh vs cached tokens, a daily stacked chart (last 30 days or all time), and the top sessions.
+- **Sessions** — every session with input, output, reasoning, cache read and total, searchable by title/model/project and sortable by any column.
+- **Models** — totals and share of usage per model and variant.
+- **Projects** — totals and share of usage per project directory.
+
+"Fresh" means input + output + reasoning. "Total" also includes cache reads and cache writes. Cache reads are usually the largest number and are always labelled separately so the figures are not misleading.
+
+Days are grouped by the machine's local calendar date.
+
+## Tests and checks
+
+```sh
+npm test                    # Vitest unit + fixture-DB integration tests
+npm run test:e2e            # Playwright E2E and responsive checks (requires a running server)
+npm run lint                # ESLint
+npx tsc --noEmit            # TypeScript
+npm run build               # Production build
+```
+
+`npm run test:e2e` needs a dev server on `http://localhost:3000` and a Chromium Playwright browser (`npx playwright install chromium`). It checks four routes at six viewport widths, search, sorting, chart ranges and console errors.
+
+See [TEST-PLAN.md](TEST-PLAN.md), [TEST-REPORT.md](TEST-REPORT.md) and [SECURITY-REVIEW.md](SECURITY-REVIEW.md) for the full results and open items.
+
+## Design and data
+
+- Next.js 16 App Router, React 19, TypeScript, Tailwind CSS v4, Recharts, Lucide.
+- Convio Design tokens: dark, calm, minimal, all colours declared in one `:root` block in `src/app/globals.css`.
+- All aggregation lives in `src/lib/usage.ts`; the read-only connection lives in `src/lib/db.ts`. No SQL is built from user input.
+- No prompt text or message content is read or rendered — only token counters and labels.
+
+## Deployment
+
+There is intentionally no cloud deployment in v1. The app reads a local file, so it is meant to run on the same machine as OpenCode. If you expose it beyond localhost, add authentication and network controls first — see [SECURITY-REVIEW.md](SECURITY-REVIEW.md).
+
+## Rollback
+
+The project uses git. To undo a change, revert the relevant commit:
+
+```sh
+git revert <commit>
+```
+
+## Known limitations
+
+- Only Chromium was tested end to end; Firefox and WebKit are still open.
+- The chart animates on first load, so the first screenshot may show axes before the filled areas appear.
+- Cache-read tokens dominate the raw totals; use the "fresh" figures when comparing actual model work.
+- Development tooling has 16 high npm audit findings from an unpatched `picomatch` ReDoS advisory. Production dependencies have zero known vulnerabilities. See [SECURITY-REVIEW.md](SECURITY-REVIEW.md).
