@@ -29,6 +29,22 @@ for (const name of ["chromium", "firefox"]) {
   const rows = await page.locator("tbody tr").count();
   notes.push(`${name}: search=${rows}`);
   if (rows < 1) failures.push(`${name}: search empty`);
+  await page.goto(BASE + "/sessions", { waitUntil: "networkidle" });
+  const before = await page.locator("tbody tr").count();
+  await page.locator('select[name="model"]').selectOption({ index: 1 });
+  await page.getByRole("button", { name: "Apply filters" }).click();
+  await page.waitForLoadState("networkidle");
+  const after = await page.locator("tbody tr").count();
+  if (!(after > 0 && after < before)) {
+    failures.push(`${name}: model filter rows ${before} -> ${after}`);
+  }
+  notes.push(`${name}: model filter rows ${before} -> ${after}`);
+
+  await page.goto(BASE + "/", { waitUntil: "networkidle" });
+  await page.locator('a[href^="/sessions?q="]').first().click();
+  await page.waitForURL(/\/sessions\?q=/);
+  notes.push(`${name}: overview session link -> ${new URL(page.url()).search}`);
+
   const [d1] = await Promise.all([page.waitForEvent("download"), page.getByRole("link", { name: "Export CSV" }).click()]);
   notes.push(`${name}: sessions csv=${(await d1.suggestedFilename())}`);
   await page.goto(BASE + "/", { waitUntil: "networkidle" });

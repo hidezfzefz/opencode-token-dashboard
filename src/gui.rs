@@ -196,7 +196,8 @@ fn stat_card(ui: &mut egui::Ui, label: &str, value: &str, meta: &str) {
 }
 
 fn draw_chart(ui: &mut egui::Ui, days: &[DayTotals]) {
-    let (rect, _) = ui.allocate_exact_size(
+    let text_color = ui.visuals().text_color();
+    let (rect, response) = ui.allocate_exact_size(
         egui::vec2(ui.available_width(), 240.0),
         egui::Sense::hover(),
     );
@@ -288,6 +289,37 @@ fn draw_chart(ui: &mut egui::Ui, days: &[DayTotals]) {
             egui::FontId::proportional(11.0),
             Color32::from_gray(150),
         );
+    }
+
+    if let Some(position) = response.hover_pos() {
+        if plot.contains(position) && !days.is_empty() {
+            let index = (((position.x - plot.left()) / plot.width()) * (days.len() - 1) as f32)
+                .round()
+                .clamp(0.0, (days.len() - 1) as f32) as usize;
+            let day = &days[index];
+            painter.line_segment(
+                [
+                    egui::pos2(x(index), plot.top()),
+                    egui::pos2(x(index), plot.bottom()),
+                ],
+                Stroke::new(1.0, Color32::from_gray(90)),
+            );
+            let tooltip = format!(
+                "{}   fresh {}   cache {}   total {}",
+                day.day,
+                format_compact(day.fresh),
+                format_compact(day.cache_read),
+                format_compact(day.total)
+            );
+            let tooltip_x = x(index).clamp(plot.left() + 90.0, plot.right() - 90.0);
+            painter.text(
+                egui::pos2(tooltip_x, plot.top() + 12.0),
+                egui::Align2::CENTER_TOP,
+                tooltip,
+                egui::FontId::proportional(12.0),
+                text_color,
+            );
+        }
     }
 }
 
@@ -530,13 +562,23 @@ impl DashboardApp {
         egui::Grid::new("top-sessions")
             .striped(true)
             .show(ui, |ui| {
-                table_header(ui, &["Session", "Model", "Fresh", "Cache read", "Total"]);
+                table_header(
+                    ui,
+                    &["Session", "Model", "Fresh", "Cache read", "Total", ""],
+                );
                 for row in snapshot.sessions.iter().take(8) {
                     ui.label(&row.label);
                     ui.label(&row.model);
                     ui.label(format_compact(row.fresh));
                     ui.label(format_compact(row.cache_read));
                     ui.label(format_number(row.total));
+                    if ui.button("Open").clicked() {
+                        self.tab = Tab::Sessions;
+                        self.search = row.label.clone();
+                        self.filter_model.clear();
+                        self.filter_project.clear();
+                        self.notice = None;
+                    }
                     ui.end_row();
                 }
             });

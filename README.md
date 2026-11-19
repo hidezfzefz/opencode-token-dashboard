@@ -72,8 +72,8 @@ If OpenCode stores its database somewhere else on your machine, set `OPENCODE_DB
 
 ## The native app
 
-- **Overview** — totals, yesterday and 7-day average, a custom-drawn chart, daily detail table, top sessions.
-- **Sessions** — live search, exact filters by model and project, sortable columns, CSV export (saved to the current directory). Keys `1`–`4` switch tabs and `R` refreshes.
+- **Overview** — totals, yesterday and 7-day average, a custom-drawn chart with hover values, daily detail table, top sessions that open a filtered session list when clicked.
+- **Sessions** — live search, exact filters by model and project, sortable columns, CSV export (saved to the current directory). Keys `1`–`4` switch tabs and `R` refreshes. In overview, clicking a top session jumps here with that session's name in the search box.
 - **Models / Projects** — usage tables with share bars.
 - **Refresh** reloads the database without restarting.
 

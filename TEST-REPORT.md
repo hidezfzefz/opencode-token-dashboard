@@ -28,6 +28,7 @@
 - GUI keyboard shortcuts: keys 1–4 switch tabs, R refreshes.
 - Replaced the web meta refresh with a pause-aware timer; axe-core reports zero violations on all four pages.
 - Browser E2E re-run on Chromium and Firefox with 0 failures.
+- Added chart hover tooltips in the native GUI, and click-through from a top session to a filtered session list in both GUIs (link precomputed in Rust because Tera has no urlencode filter). E2E now also checks the model filter (72 → 33 rows) and the click-through URL.
 
 ## Open
 - Automated GUI screenshot testing (needs a virtual display in CI).

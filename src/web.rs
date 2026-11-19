@@ -147,6 +147,7 @@ fn session_view(rows: &[SessionTotals]) -> Vec<Value> {
         .map(|row| {
             json!({
                 "label": row.label,
+                "href": format!("/sessions?q={}", url_encode(&row.label)),
                 "model": row.model,
                 "fresh": format_compact(row.fresh),
                 "cache_read": format_compact(row.cache_read),
