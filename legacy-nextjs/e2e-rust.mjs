@@ -1,5 +1,5 @@
 import { chromium, firefox } from "playwright";
-const BASE = "http://localhost:3000";
+const BASE = process.env.BASE_URL || "http://localhost:3000";
 const failures = [];
 const notes = [];
 for (const name of ["chromium", "firefox"]) {

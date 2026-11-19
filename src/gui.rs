@@ -78,6 +78,8 @@ struct DashboardApp {
     data: Data,
     tab: Tab,
     search: String,
+    filter_model: String,
+    filter_project: String,
     sort: SortKey,
     descending: bool,
     all_days: bool,
@@ -103,6 +105,8 @@ impl DashboardApp {
             data,
             tab: Tab::Overview,
             search: String::new(),
+            filter_model: String::new(),
+            filter_project: String::new(),
             sort: SortKey::Total,
             descending: true,
             all_days: config.all_days,
@@ -301,6 +305,34 @@ impl eframe::App for DashboardApp {
             ctx.set_style_of(egui::Theme::Dark, style());
             ctx.set_style_of(egui::Theme::Light, style());
             self.styled = true;
+        }
+
+        let mut switch_to = None;
+        let mut refresh = false;
+        ui.input(|input| {
+            if input.key_pressed(egui::Key::Num1) {
+                switch_to = Some(Tab::Overview);
+            } else if input.key_pressed(egui::Key::Num2) {
+                switch_to = Some(Tab::Sessions);
+            } else if input.key_pressed(egui::Key::Num3) {
+                switch_to = Some(Tab::Models);
+            } else if input.key_pressed(egui::Key::Num4) {
+                switch_to = Some(Tab::Projects);
+            }
+            if input.key_pressed(egui::Key::R)
+                && !input.modifiers.ctrl
+                && !input.modifiers.command
+                && !input.modifiers.alt
+            {
+                refresh = true;
+            }
+        });
+        if let Some(tab) = switch_to {
+            self.tab = tab;
+            self.notice = None;
+        }
+        if refresh {
+            self.refresh();
         }
 
         if self.sync_seconds > 0 {
@@ -514,6 +546,42 @@ impl DashboardApp {
         ui.horizontal(|ui| {
             ui.label("Search");
             ui.text_edit_singleline(&mut self.search);
+            ui.label("Model");
+            let model_label = if self.filter_model.is_empty() {
+                "All".to_string()
+            } else {
+                self.filter_model.clone()
+            };
+            egui::ComboBox::from_id_salt("filter-model")
+                .selected_text(model_label)
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(&mut self.filter_model, String::new(), "All");
+                    for model in &snapshot.models {
+                        ui.selectable_value(
+                            &mut self.filter_model,
+                            model.key.clone(),
+                            &model.label,
+                        );
+                    }
+                });
+            ui.label("Project");
+            let project_label = if self.filter_project.is_empty() {
+                "All".to_string()
+            } else {
+                self.filter_project.clone()
+            };
+            egui::ComboBox::from_id_salt("filter-project")
+                .selected_text(project_label)
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(&mut self.filter_project, String::new(), "All");
+                    for project in &snapshot.projects {
+                        ui.selectable_value(
+                            &mut self.filter_project,
+                            project.label.clone(),
+                            &project.label,
+                        );
+                    }
+                });
             ui.label("Sort");
             egui::ComboBox::from_label("")
                 .selected_text(self.sort.label())
@@ -620,18 +688,12 @@ impl DashboardApp {
     }
 
     fn filtered_sessions(&self, snapshot: &UsageSnapshot) -> Vec<SessionTotals> {
-        let needle = self.search.trim().to_lowercase();
-        let mut rows: Vec<SessionTotals> = snapshot
-            .sessions
-            .iter()
-            .filter(|row| {
-                needle.is_empty()
-                    || format!("{} {} {}", row.label, row.model, row.project)
-                        .to_lowercase()
-                        .contains(&needle)
-            })
-            .cloned()
-            .collect();
+        let mut rows = crate::usage::filter_sessions(
+            &snapshot.sessions,
+            &self.search,
+            &self.filter_model,
+            &self.filter_project,
+        );
         let descending = self.descending;
         rows.sort_by(|a, b| {
             let order = match self.sort {

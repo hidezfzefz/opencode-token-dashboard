@@ -55,7 +55,7 @@ opencode-token-dashboard [--web] [--host ADDR] [--port PORT] [--db-path PATH]
 The dashboard keeps itself up to date with the OpenCode database:
 
 - **Native GUI:** watches the database, WAL and shared-memory files and reloads when they change. The **Auto sync** selector offers Off, 1, 5, 15 or 60 seconds; the **Last synced** label shows when it last read the database. The interval and the chart range are saved between runs. Settings live in `~/.config/opencode-token-dashboard/config.json` (platform-specific, overridable with `OTD_CONFIG_DIR`).
-- **Web mode:** pages reload every 15 seconds via a meta refresh. Set `OTD_AUTO_REFRESH_SECONDS=0` to disable, or another number to change the interval. The current interval is shown at the bottom of each page. Auto-refresh is paused on `/sessions` while a search is active so your input is not wiped.
+- **Web mode:** pages reload every 15 seconds via a pause-aware timer that stops while the tab is hidden or a field is focused. Set `OTD_AUTO_REFRESH_SECONDS=0` to disable, or another number to change the interval. Auto-refresh is disabled on `/sessions` while a search or filter is active.
 
 Manual **Refresh** is always available in both modes.
 
@@ -73,7 +73,7 @@ If OpenCode stores its database somewhere else on your machine, set `OPENCODE_DB
 ## The native app
 
 - **Overview** — totals, yesterday and 7-day average, a custom-drawn chart, daily detail table, top sessions.
-- **Sessions** — live search, sortable columns, CSV export (saved to the current directory).
+- **Sessions** — live search, exact filters by model and project, sortable columns, CSV export (saved to the current directory). Keys `1`–`4` switch tabs and `R` refreshes.
 - **Models / Projects** — usage tables with share bars.
 - **Refresh** reloads the database without restarting.
 

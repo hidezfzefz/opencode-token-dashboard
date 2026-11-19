@@ -317,6 +317,29 @@ fn day_key(date: NaiveDate) -> String {
     date.format("%Y-%m-%d").to_string()
 }
 
+/// Filter sessions by a free-text query, an exact model and an exact project.
+/// Empty filter values are ignored.
+pub fn filter_sessions(
+    rows: &[SessionTotals],
+    query: &str,
+    model: &str,
+    project: &str,
+) -> Vec<SessionTotals> {
+    let needle = query.trim().to_lowercase();
+    rows.iter()
+        .filter(|row| {
+            let text_match = needle.is_empty()
+                || format!("{} {} {}", row.label, row.model, row.project)
+                    .to_lowercase()
+                    .contains(&needle);
+            let model_match = model.is_empty() || row.model == model;
+            let project_match = project.is_empty() || row.project == project;
+            text_match && model_match && project_match
+        })
+        .cloned()
+        .collect()
+}
+
 pub fn aggregate(rows: Vec<UsageRow>, path: &Path, now: DateTime<Local>) -> UsageSnapshot {
     let message_count = rows.len();
     let today_date = now.date_naive();
@@ -539,6 +562,41 @@ mod tests {
         assert_eq!(rows.len(), 2);
         assert_eq!(rows[0].counts.input, 20);
         let _ = fs::remove_file(path);
+    }
+
+    fn session(label: &str, model: &str, project: &str) -> SessionTotals {
+        SessionTotals {
+            key: label.to_string(),
+            label: label.to_string(),
+            model: model.to_string(),
+            project: project.to_string(),
+            updated_at: 0,
+            messages: 1,
+            input: 0,
+            output: 0,
+            reasoning: 0,
+            cache_read: 0,
+            cache_write: 0,
+            fresh: 0,
+            total: 0,
+        }
+    }
+
+    #[test]
+    fn filter_sessions_combines_text_model_and_project() {
+        let rows = vec![
+            session("Alpha chat", "provider/a", "/work/one"),
+            session("Beta chat", "provider/b", "/work/two"),
+        ];
+        assert_eq!(filter_sessions(&rows, "", "", "").len(), 2);
+        assert_eq!(filter_sessions(&rows, "alpha", "", "").len(), 1);
+        assert_eq!(filter_sessions(&rows, "", "provider/b", "").len(), 1);
+        assert_eq!(filter_sessions(&rows, "", "", "/work/one").len(), 1);
+        assert_eq!(
+            filter_sessions(&rows, "chat", "provider/a", "/work/one").len(),
+            1
+        );
+        assert!(filter_sessions(&rows, "", "provider/a", "/work/two").is_empty());
     }
 
     #[test]

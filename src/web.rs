@@ -33,6 +33,8 @@ pub struct OverviewQuery {
 #[derive(Deserialize)]
 pub struct SessionsQuery {
     q: Option<String>,
+    model: Option<String>,
+    project: Option<String>,
     sort: Option<String>,
     dir: Option<String>,
 }
@@ -237,17 +239,31 @@ async fn sessions(State(state): State<AppState>, Query(query): Query<SessionsQue
         Err(error) => return error_response(&state, error),
     };
     let q = query.q.unwrap_or_default();
-    let needle = q.trim().to_lowercase();
-    let mut rows: Vec<SessionTotals> = snapshot
-        .sessions
+    let model = query.model.unwrap_or_default();
+    let project = query.project.unwrap_or_default();
+    let mut rows = crate::usage::filter_sessions(&snapshot.sessions, &q, &model, &project);
+
+    let model_options: Vec<Value> = snapshot
+        .models
         .iter()
-        .filter(|row| {
-            needle.is_empty()
-                || format!("{} {} {}", row.label, row.model, row.project)
-                    .to_lowercase()
-                    .contains(&needle)
+        .map(|item| {
+            json!({
+                "label": item.label,
+                "value": item.key,
+                "selected": item.key == model,
+            })
         })
-        .cloned()
+        .collect();
+    let project_options: Vec<Value> = snapshot
+        .projects
+        .iter()
+        .map(|item| {
+            json!({
+                "label": item.label,
+                "value": item.label,
+                "selected": item.label == project,
+            })
+        })
         .collect();
 
     let valid_keys = [
@@ -274,6 +290,8 @@ async fn sessions(State(state): State<AppState>, Query(query): Query<SessionsQue
     sort_sessions(&mut rows, &sort, dir);
 
     let encoded_q = url_encode(&q);
+    let encoded_model = url_encode(&model);
+    let encoded_project = url_encode(&project);
     let columns: Vec<Value> = [
         ("Session", "label", false),
         ("Last active", "updatedAt", true),
@@ -294,7 +312,9 @@ async fn sessions(State(state): State<AppState>, Query(query): Query<SessionsQue
         json!({
             "label": label,
             "numeric": numeric,
-            "href": format!("/sessions?q={encoded_q}&sort={key}&dir={next_dir}"),
+            "href": format!(
+                "/sessions?q={encoded_q}&model={encoded_model}&project={encoded_project}&sort={key}&dir={next_dir}"
+            ),
         })
     })
     .collect();
@@ -315,13 +335,20 @@ async fn sessions(State(state): State<AppState>, Query(query): Query<SessionsQue
         })
         .collect();
 
-    let mut query_string = format!("q={encoded_q}&sort={}&dir={dir}", url_encode(&sort));
+    let mut query_string = format!(
+        "q={encoded_q}&model={encoded_model}&project={encoded_project}&sort={}&dir={dir}",
+        url_encode(&sort)
+    );
     if query_string.starts_with("q=&") {
         query_string = query_string[3..].to_string();
     }
 
     let mut context = Context::new();
     context.insert("q", &q);
+    context.insert("model", &model);
+    context.insert("project", &project);
+    context.insert("model_options", &model_options);
+    context.insert("project_options", &project_options);
     context.insert("query_string", &query_string);
     context.insert("rows", &view);
     context.insert("columns", &columns);
@@ -433,18 +460,9 @@ async fn sessions_csv(
         Err(error) => return error_response(&state, error),
     };
     let q = query.q.unwrap_or_default();
-    let needle = q.trim().to_lowercase();
-    let mut rows: Vec<SessionTotals> = snapshot
-        .sessions
-        .iter()
-        .filter(|row| {
-            needle.is_empty()
-                || format!("{} {} {}", row.label, row.model, row.project)
-                    .to_lowercase()
-                    .contains(&needle)
-        })
-        .cloned()
-        .collect();
+    let model = query.model.unwrap_or_default();
+    let project = query.project.unwrap_or_default();
+    let mut rows = crate::usage::filter_sessions(&snapshot.sessions, &q, &model, &project);
     let valid_keys = [
         "label",
         "updatedAt",

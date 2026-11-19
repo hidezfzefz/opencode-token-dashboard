@@ -3,7 +3,23 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  {% if refresh_seconds > 0 %}<meta http-equiv="refresh" content="{{ refresh_seconds }}">{% endif %}
+  {% if refresh_seconds > 0 %}
+  <script>
+    (function () {
+      const delay = {{ refresh_seconds }} * 1000;
+      let timer;
+      const paused = () => document.hidden || (document.activeElement && document.activeElement.matches("input, select, textarea"));
+      function schedule() {
+        clearTimeout(timer);
+        if (!paused()) timer = setTimeout(() => location.reload(), delay);
+      }
+      document.addEventListener("visibilitychange", schedule);
+      document.addEventListener("focusin", schedule);
+      document.addEventListener("focusout", schedule);
+      schedule();
+    })();
+  </script>
+  {% endif %}
   <title>{{ title }} — OpenCode dashboard</title>
   <meta name="description" content="Local dashboard for OpenCode token usage">
   <link rel="icon" href="/icon.svg" type="image/svg+xml">

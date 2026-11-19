@@ -4,7 +4,7 @@
 |---|---|
 | `cargo fmt -- --check` | pass |
 | `cargo clippy --all-targets -- -D warnings` | pass, 0 warnings |
-| `cargo test` | 13 passed, 0 failed |
+| `cargo test` | 14 passed, 0 failed |
 | `cargo build --release` (Linux) | pass |
 | Native window launch on Linux | process stayed alive for the full timeout (no crash) |
 | `--web` mode after GUI changes | HTTP 200 on `/` |
@@ -18,10 +18,16 @@
 
 ## Auto sync verification
 - Database fingerprint changes when the underlying file changes: unit test passes.
-- Web mode emits `<meta http-equiv="refresh" content="15">` by default and no tag when `OTD_AUTO_REFRESH_SECONDS=0`.
+- Web mode emits a pause-aware refresh script by default and no script when `OTD_AUTO_REFRESH_SECONDS=0`.
 - Native window still launches with auto sync enabled; no crash.
 - Settings save/load round-trip tested; invalid intervals normalized to 1 second.
 - Web auto-refresh is absent on `/sessions?q=...` so typing in search is not interrupted.
+
+## Latest improvement round
+- Sessions can be filtered by exact model and project in both interfaces, in addition to free-text search. CSV exports and sort links preserve all filters. Added a pure `filter_sessions` helper with a unit test; 14 tests now pass.
+- GUI keyboard shortcuts: keys 1–4 switch tabs, R refreshes.
+- Replaced the web meta refresh with a pause-aware timer; axe-core reports zero violations on all four pages.
+- Browser E2E re-run on Chromium and Firefox with 0 failures.
 
 ## Open
 - Automated GUI screenshot testing (needs a virtual display in CI).

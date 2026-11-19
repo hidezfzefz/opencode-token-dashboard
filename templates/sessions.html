@@ -9,6 +9,8 @@
     <a class="btn" href="/sessions.csv{% if query_string %}?{{ query_string }}{% endif %}">Export CSV</a>
     <form action="/sessions" method="get">
       {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+      {% if model %}<input type="hidden" name="model" value="{{ model }}">{% endif %}
+      {% if project %}<input type="hidden" name="project" value="{{ project }}">{% endif %}
       <button type="submit" class="btn">Refresh</button>
     </form>
   </nav>
@@ -16,6 +18,22 @@
 
 <form action="/sessions" method="get" style="margin-bottom:var(--space-4)">
   <input class="input" type="search" name="q" value="{{ q }}" placeholder="Search sessions, models or projects" aria-label="Search sessions" style="max-width:420px">
+  <select class="input" name="model" aria-label="Filter by model" style="max-width:260px;margin-top:var(--space-2)">
+    <option value="">All models</option>
+    {% for option in model_options %}
+    <option value="{{ option.value }}" {% if option.selected %}selected{% endif %}>{{ option.label }}</option>
+    {% endfor %}
+  </select>
+  <select class="input" name="project" aria-label="Filter by project" style="max-width:260px;margin-top:var(--space-2)">
+    <option value="">All projects</option>
+    {% for option in project_options %}
+    <option value="{{ option.value }}" {% if option.selected %}selected{% endif %}>{{ option.label }}</option>
+    {% endfor %}
+  </select>
+  <div style="margin-top:var(--space-2)">
+    <button type="submit" class="btn btn-primary">Apply filters</button>
+    <a class="btn" href="/sessions" style="margin-left:8px">Clear</a>
+  </div>
 </form>
 
 <section class="card">
