@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Mutex;
 use std::time::Instant;
 
 use axum::body::Body;
@@ -45,6 +46,8 @@ pub fn templates() -> Tera {
     tera
 }
 
+type SnapshotCache = Arc<Mutex<Option<(Vec<(u64, u128)>, UsageSnapshot)>>>;
+
 #[derive(Clone)]
 pub struct AppState {
     pub tera: Arc<Tera>,
@@ -52,6 +55,7 @@ pub struct AppState {
     pub refresh_seconds: i64,
     pub pricing: crate::cost::Pricing,
     pub config_path: PathBuf,
+    pub cache: SnapshotCache,
 }
 
 #[derive(Deserialize)]
@@ -122,11 +126,27 @@ fn error_response(state: &AppState, message: String) -> Response {
 }
 
 async fn load_usage(state: &AppState) -> Result<UsageSnapshot, String> {
+    let fingerprint = usage::db_fingerprint(&state.db_path);
+    if let Ok(cache) = state.cache.lock() {
+        if let Some((cached_fingerprint, snapshot)) = cache.as_ref() {
+            if *cached_fingerprint == fingerprint {
+                return Ok(snapshot.clone());
+            }
+        }
+    }
+
     let path = state.db_path.clone();
-    match tokio::task::spawn_blocking(move || usage::get_usage(&path)).await {
+    let result = match tokio::task::spawn_blocking(move || usage::get_usage(&path)).await {
         Ok(result) => result,
         Err(error) => Err(format!("Could not load usage: {error}")),
+    };
+
+    if let Ok(snapshot) = &result {
+        if let Ok(mut cache) = state.cache.lock() {
+            *cache = Some((fingerprint, snapshot.clone()));
+        }
     }
+    result
 }
 
 fn url_encode(value: &str) -> String {
@@ -807,6 +827,7 @@ mod api_tests {
                 refresh_seconds: 15,
                 pricing: crate::cost::Pricing::default(),
                 config_path: self.config_path.clone(),
+                cache: Arc::new(Mutex::new(None)),
             }
         }
 

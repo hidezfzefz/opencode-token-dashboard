@@ -81,6 +81,7 @@ async fn main() {
         refresh_seconds,
         pricing: app::settings::load_pricing_from(&app::settings::pricing_path()),
         config_path: app::settings::config_path(),
+        cache: Arc::new(std::sync::Mutex::new(None)),
     };
     if host != "127.0.0.1" && host != "localhost" && host != "::1" {
         eprintln!("WARNING: binding to {host}. This API has no authentication; do not expose it on an untrusted network.");
