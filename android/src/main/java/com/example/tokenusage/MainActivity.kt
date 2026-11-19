@@ -37,6 +37,8 @@ class MainActivity : ComponentActivity() {
                 allDays = settings.allDays,
                 onAllDaysChange = viewModel::setAllDays,
                 exportStatus = uiState.exportStatus,
+                remoteUrl = settings.remoteUrl,
+                onRemoteUrlChange = viewModel::setRemoteUrl,
             )
         }
     }
@@ -55,6 +57,8 @@ fun TokenUsageMainContent(
     allDays: Boolean = false,
     onAllDaysChange: (Boolean) -> Unit = {},
     exportStatus: String? = null,
+    remoteUrl: String = "",
+    onRemoteUrlChange: (String) -> Unit = {},
 ) {
     TokenUsageApp(
         snapshot = snapshot,
@@ -68,6 +72,8 @@ fun TokenUsageMainContent(
         onAutoSyncChange = onAutoSyncChange,
         onAllDaysChange = onAllDaysChange,
         exportStatus = exportStatus,
+        remoteUrl = remoteUrl,
+        onRemoteUrlChange = onRemoteUrlChange,
         modifier = Modifier.fillMaxSize(),
     )
 }

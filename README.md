@@ -61,6 +61,16 @@ The dashboard keeps itself up to date with the OpenCode database:
 
 Manual **Refresh** is always available in both modes.
 
+## Phone app over the LAN
+
+Android cannot read another app's private database, so the phone app connects to the desktop app instead:
+
+```sh
+opencode-token-dashboard --web --host 0.0.0.0 --port 3000
+```
+
+Then enter `http://<desktop-ip>:3000` in the **Desktop host** field of the Android app. It polls `GET /api/usage` on the same auto-sync interval. The endpoint is read-only and has no authentication — use it only on a trusted LAN, and keep the default `127.0.0.1` binding otherwise.
+
 ## Database location
 
 The app checks, in order:

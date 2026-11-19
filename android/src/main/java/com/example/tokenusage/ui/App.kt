@@ -58,6 +58,8 @@ fun TokenUsageApp(
     onAutoSyncChange: (Int) -> Unit = {},
     onAllDaysChange: (Boolean) -> Unit = {},
     exportStatus: String? = null,
+    remoteUrl: String = "",
+    onRemoteUrlChange: (String) -> Unit = {},
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(initialTab) }
     var sessionQuery by rememberSaveable { mutableStateOf(initialSessionQuery) }
@@ -76,6 +78,8 @@ fun TokenUsageApp(
                     onAutoSyncChange = onAutoSyncChange,
                     allDays = allDays,
                     onAllDaysChange = onAllDaysChange,
+                    remoteUrl = remoteUrl,
+                    onRemoteUrlChange = onRemoteUrlChange,
                 )
             },
         ) { innerPadding ->

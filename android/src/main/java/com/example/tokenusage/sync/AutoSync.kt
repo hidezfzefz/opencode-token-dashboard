@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
@@ -165,9 +166,15 @@ class DashboardViewModel(
         }
         viewModelScope.launch {
             _settings
-                .map { it.autoSyncSeconds }
+                .map { Pair(it.autoSyncSeconds, it.remoteUrl) }
                 .distinctUntilChanged()
-                .flatMapLatest { seconds -> autoSync.snapshots(seconds) }
+                .flatMapLatest { (seconds, remoteUrl) ->
+                    if (remoteUrl.isBlank()) {
+                        autoSync.snapshots(seconds)
+                    } else {
+                        RemoteWatcher(remoteUrl).events(seconds)
+                    }
+                }
                 .collect { event -> updateState { state -> state.apply(event) } }
         }
     }
@@ -176,7 +183,16 @@ class DashboardViewModel(
     fun refresh() {
         viewModelScope.launch {
             updateState { it.copy(isLoading = true, error = null) }
-            val event = autoSync.loadOnce()
+            val remoteUrl = _settings.value.remoteUrl
+            val event = if (remoteUrl.isBlank()) {
+                autoSync.loadOnce()
+            } else {
+                RemoteWatcher(remoteUrl).events(0).let { flow ->
+                    var result: SyncEvent? = null
+                    flow.collect { result = it }
+                    result ?: SyncEvent.Failed("No response from $remoteUrl")
+                }
+            }
             updateState { state ->
                 when (event) {
                     is SyncEvent.Loaded -> state.copy(
@@ -196,6 +212,10 @@ class DashboardViewModel(
 
     fun setAllDays(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.setAllDays(enabled) }
+    }
+
+    fun setRemoteUrl(url: String) {
+        viewModelScope.launch { settingsRepository.setRemoteUrl(url) }
     }
 
     /** Export triggers; results are published through [uiState].exportStatus. */

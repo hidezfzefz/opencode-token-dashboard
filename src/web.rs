@@ -7,6 +7,7 @@ use axum::http::{header, HeaderValue, StatusCode};
 use axum::middleware::{self, Next};
 use axum::response::{Html, IntoResponse, Response};
 use axum::routing::get;
+use axum::Json;
 use axum::Router;
 use chrono::DateTime;
 use serde::Deserialize;
@@ -510,6 +511,21 @@ async fn daily_csv(State(state): State<AppState>, Query(query): Query<OverviewQu
     )
 }
 
+fn json_error(status: StatusCode, code: &str, message: impl Into<String>) -> Response {
+    (
+        status,
+        Json(json!({ "error": { "code": code, "message": message.into() } })),
+    )
+        .into_response()
+}
+
+async fn api_usage(State(state): State<AppState>) -> Response {
+    match load_usage(&state).await {
+        Ok(snapshot) => Json(snapshot).into_response(),
+        Err(error) => json_error(StatusCode::INTERNAL_SERVER_ERROR, "database_error", error),
+    }
+}
+
 async fn style_css() -> Response {
     (
         [(
@@ -570,6 +586,7 @@ pub fn router(state: AppState) -> Router {
         .route("/daily.csv", get(daily_csv))
         .route("/static/style.css", get(style_css))
         .route("/icon.svg", get(icon_svg))
+        .route("/api/usage", get(api_usage))
         .fallback(not_found)
         .layer(middleware::from_fn(security_headers))
         .with_state(state)

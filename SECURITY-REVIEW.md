@@ -2,6 +2,7 @@
 
 ## Attack surface
 - Native GUI: local file reads only; no network listener unless `--web` is used.
+- `--web` now also serves a read-only `GET /api/usage` for the Android app. It has no authentication; the server binds to `127.0.0.1` by default and prints a warning when given a non-loopback host. LAN use is a deliberate, documented opt-in.
 - Optional web mode: four GET pages, two CSV downloads, one search form.
 - No auth, uploads, cookies, telemetry or secrets.
 

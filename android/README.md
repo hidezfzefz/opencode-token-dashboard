@@ -73,10 +73,23 @@ Preferences are persisted with `androidx.datastore.preferences` (file `token-usa
 |---|---|---|
 | Auto sync interval | Off (0), 1, 5, 15 or 60 seconds | 5 seconds |
 | Show all days | on / off | off |
+| Desktop host | `host[:port]` or blank | blank (local database file) |
 
 Unsupported stored values are normalized back to the default on read, so a stale or corrupted preferences file cannot break the UI.
 
 Auto sync is a coroutine watcher. On every tick it computes a cheap fingerprint — the length and last-modified time of `opencode.db` plus its `-wal` and `-shm` siblings — and only re-queries SQLite when that fingerprint changes. "Off" still performs one initial load, then stops watching. The **Refresh** button always forces a fresh load. Any load error is surfaced as a readable message in the UI instead of crashing the app.
+
+## Live tracking from the desktop app
+
+Android apps cannot read another app's private database. To follow live usage instead of pushing DB copies, run the Rust dashboard on the machine that has OpenCode and give the phone its LAN address:
+
+```sh
+opencode-token-dashboard --web --host 0.0.0.0 --port 3000
+```
+
+Enter `http://192.168.x.x:3000` in the **Desktop host** field. The app then polls `GET /api/usage` instead of reading a local file; the same auto-sync interval applies and CSV exports still come from the last loaded snapshot. Leave the field blank to return to local-file mode.
+
+The endpoint is read-only and unauthenticated. Only use this on a trusted LAN; do not expose the port to the internet. The manifest enables `INTERNET` and cleartext HTTP for this local LAN use.
 
 ## CSV export
 

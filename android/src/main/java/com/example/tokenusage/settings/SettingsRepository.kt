@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -22,10 +23,12 @@ import kotlinx.coroutines.flow.map
 data class Settings(
     val autoSyncSeconds: Int = DEFAULT_AUTO_SYNC_SECONDS,
     val allDays: Boolean = DEFAULT_ALL_DAYS,
+    val remoteUrl: String = DEFAULT_REMOTE_URL,
 ) {
     companion object {
         const val DEFAULT_AUTO_SYNC_SECONDS: Int = 5
         const val DEFAULT_ALL_DAYS: Boolean = false
+        const val DEFAULT_REMOTE_URL: String = ""
 
         /** Mirrors the desktop app's Off / 1 / 5 / 15 / 60 second choices. */
         val ALLOWED_AUTO_SYNC_SECONDS: Set<Int> = setOf(0, 1, 5, 15, 60)
@@ -50,6 +53,7 @@ fun normalizeAutoSyncSeconds(seconds: Int): Int =
 private object PreferenceKeys {
     val AUTO_SYNC_SECONDS = intPreferencesKey("auto_sync_seconds")
     val ALL_DAYS = booleanPreferencesKey("all_days")
+    val REMOTE_URL = stringPreferencesKey("remote_url")
 }
 
 // DataStore delegates must be declared at top level so the single instance is
@@ -74,6 +78,7 @@ class SettingsRepository(private val context: Context) {
                         ?: Settings.DEFAULT_AUTO_SYNC_SECONDS,
                 ),
                 allDays = preferences[PreferenceKeys.ALL_DAYS] ?: Settings.DEFAULT_ALL_DAYS,
+                remoteUrl = preferences[PreferenceKeys.REMOTE_URL] ?: Settings.DEFAULT_REMOTE_URL,
             )
         }
         .catch {
@@ -92,6 +97,13 @@ class SettingsRepository(private val context: Context) {
     suspend fun setAllDays(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
             preferences[PreferenceKeys.ALL_DAYS] = enabled
+        }
+    }
+
+    /** Blank means local database mode; otherwise host[:port] of the desktop app. */
+    suspend fun setRemoteUrl(url: String) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[PreferenceKeys.REMOTE_URL] = url.trim()
         }
     }
 }

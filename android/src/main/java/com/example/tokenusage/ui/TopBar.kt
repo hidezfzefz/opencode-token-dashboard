@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +45,8 @@ internal fun TopBar(
     onAutoSyncChange: (Int) -> Unit = {},
     allDays: Boolean = false,
     onAllDaysChange: (Boolean) -> Unit = {},
+    remoteUrl: String = "",
+    onRemoteUrlChange: (String) -> Unit = {},
 ) {
     Column(modifier = modifier.background(Palette.Background)) {
         Row(
@@ -96,6 +99,13 @@ internal fun TopBar(
                 color = Palette.Muted,
                 style = androidx.compose.material3.MaterialTheme.typography.labelMedium,
                 modifier = Modifier.clickable { onAllDaysChange(!allDays) },
+            )
+            TextField(
+                value = remoteUrl,
+                onValueChange = onRemoteUrlChange,
+                label = { Text("Desktop host (blank = local DB)") },
+                singleLine = true,
+                modifier = Modifier.weight(1f),
             )
         }
 
