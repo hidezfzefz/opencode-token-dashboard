@@ -9,11 +9,13 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.example.tokenusage"
+        // A new applicationId lets this build install alongside older releases
+        // whose runner-generated debug signatures cannot be updated in place.
+        applicationId = "com.example.tokenusage.live"
         minSdk = 26
         targetSdk = 37
-        versionCode = 2
-        versionName = "0.3.2"
+        versionCode = 3
+        versionName = "0.3.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

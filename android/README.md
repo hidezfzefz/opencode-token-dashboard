@@ -30,14 +30,14 @@ adb install -r android/app/build/outputs/apk/debug/app-debug.apk
 The app reads a **copy** of your OpenCode database from its own private files directory:
 
 ```
-/data/data/com.example.tokenusage/files/token-usage/opencode.db
+/data/data/com.example.tokenusage.live/files/token-usage/opencode.db
 ```
 
 Push your local database there. From the folder containing `opencode.db`:
 
 ```sh
-adb shell mkdir -p /data/data/com.example.tokenusage/files/token-usage
-adb push opencode.db /data/data/com.example.tokenusage/files/token-usage/opencode.db
+adb shell mkdir -p /data/data/com.example.tokenusage.live/files/token-usage
+adb push opencode.db /data/data/com.example.tokenusage.live/files/token-usage/opencode.db
 ```
 
 The directory must already exist when the app is installed — install the APK before pushing.
@@ -52,9 +52,9 @@ adb remount   # only if prompted
 If `adb root` is unavailable, use `run-as` for this debuggable build, which works without root:
 
 ```sh
-adb shell mkdir -p /data/data/com.example.tokenusage/files/token-usage
+adb shell mkdir -p /data/data/com.example.tokenusage.live/files/token-usage
 adb push opencode.db /data/local/tmp/opencode.db
-adb shell run-as com.example.tokenusage cp /data/local/tmp/opencode.db \
+adb shell run-as com.example.tokenusage.live cp /data/local/tmp/opencode.db \
   files/token-usage/opencode.db
 adb shell rm /data/local/tmp/opencode.db
 ```
@@ -83,7 +83,7 @@ Auto sync is a coroutine watcher. On every tick it computes a cheap fingerprint 
 
 CI builds are signed with the stable debug keystore committed at `keystore/debug.jks`, so every release has the same signature and normal updates work. `versionCode` is bumped for each release.
 
-Releases before v0.3.2 used a fresh runner-generated debug key. If you installed one of those, Android will refuse to update it over v0.3.2 with a "different signature" error — uninstall that old copy once, then install v0.3.2. From then on updates will install normally.
+Releases before v0.3.2 used a fresh runner-generated debug key. From v0.3.3 the application id is `com.example.tokenusage.live`, so the new APK installs as a separate app even if an older "Token Usage" copy is still on the device. You can uninstall the old one afterwards. Future updates use the same application id and signing key, so they install normally.
 
 ## Live tracking from the desktop app
 
@@ -102,7 +102,7 @@ The endpoint is read-only and unauthenticated. Only use this on a trusted LAN; d
 Exports are written with no permission prompt and no Storage Access Framework picker, into the app's own external files directory:
 
 ```
-/storage/emulated/0/Android/data/com.example.tokenusage/files/exports/
+/storage/emulated/0/Android/data/com.example.tokenusage.live/files/exports/
 ```
 
 - `opencode-token-usage-sessions.csv`
@@ -111,7 +111,7 @@ Exports are written with no permission prompt and no Storage Access Framework pi
 You can pull them off the device with:
 
 ```sh
-adb pull /sdcard/Android/data/com.example.tokenusage/files/exports/opencode-token-usage-sessions.csv .
+adb pull /sdcard/Android/data/com.example.tokenusage.live/files/exports/opencode-token-usage-sessions.csv .
 ```
 
 Each export returns the written `File` (or a readable failure message), which the UI shows as a Toast/status line. The files are removed when the app is uninstalled.
