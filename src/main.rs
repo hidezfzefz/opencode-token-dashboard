@@ -82,6 +82,9 @@ async fn main() {
         pricing: app::settings::load_pricing_from(&app::settings::pricing_path()),
         config_path: app::settings::config_path(),
     };
+    if host != "127.0.0.1" && host != "localhost" && host != "::1" {
+        eprintln!("WARNING: binding to {host}. This API has no authentication; do not expose it on an untrusted network.");
+    }
     let router = app::web::router(state);
     let address = format!("{host}:{port}");
     let listener = tokio::net::TcpListener::bind(&address)
