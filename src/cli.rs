@@ -1,4 +1,14 @@
+use std::io::Write;
 use std::path::{Path, PathBuf};
+
+macro_rules! out {
+    ($fmt:expr) => {
+        let _ = writeln!(std::io::stdout(), $fmt);
+    };
+    ($fmt:expr, $($arg:tt)*) => {
+        let _ = writeln!(std::io::stdout(), $fmt, $($arg)*);
+    };
+}
 
 use crate::csv;
 use crate::format::{format_compact, format_number};
@@ -47,25 +57,25 @@ pub fn report(args: &[String]) -> i32 {
         }
     };
     let insights = insights::compute(&snapshot);
-    println!("Token usage — {}", snapshot.db_path);
-    println!(
+    out!("Token usage — {}", snapshot.db_path);
+    out!(
         "Today:     {} tokens (fresh {})",
         format_compact(snapshot.today.total),
         format_compact(snapshot.today.fresh)
     );
-    println!(
+    out!(
         "All time:  {} tokens (fresh {})",
         format_compact(snapshot.all_time.total),
         format_compact(snapshot.all_time.fresh)
     );
-    println!("Yesterday: {}", format_compact(snapshot.yesterday.total));
-    println!(
+    out!("Yesterday: {}", format_compact(snapshot.yesterday.total));
+    out!(
         "7-day daily average: {} — today is {:.1}× that ({})",
         format_compact(snapshot.seven_day_average.total),
         insights.spike_ratio,
         insights::spike_label(insights.spike_ratio)
     );
-    println!(
+    out!(
         "Busiest day: {}",
         insights
             .busiest_day
@@ -73,11 +83,11 @@ pub fn report(args: &[String]) -> i32 {
             .map(|day| format!("{day} ({})", format_compact(insights.busiest_day_total)))
             .unwrap_or_else(|| "none".to_string())
     );
-    println!(
+    out!(
         "Top model: {}",
         insights.top_model.as_deref().unwrap_or("none")
     );
-    println!(
+    out!(
         "Assistant messages: {} across {} days",
         format_number(snapshot.message_count as i64),
         snapshot.per_day.len()
@@ -111,11 +121,11 @@ pub fn export(args: &[String]) -> i32 {
         eprintln!("Could not write {}: {error}", daily.display());
         return 1;
     }
-    println!(
+    out!(
         "Wrote {} ({} rows)",
         sessions.display(),
         snapshot.sessions.len()
     );
-    println!("Wrote {} ({} rows)", daily.display(), days.len());
+    out!("Wrote {} ({} rows)", daily.display(), days.len());
     0
 }

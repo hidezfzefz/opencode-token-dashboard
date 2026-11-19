@@ -31,6 +31,7 @@ Every `/api/v1` endpoint was tested against a real fixture database in-process: 
 - Added an insights module (spike ratio, busiest day, cache share, top model) shown in both GUIs, with a unit test for spike labels.
 - Added headless `report` and `export` CLI commands; verified against the real database (`report` output correct, `export` wrote 54 session rows and 26 daily rows).
 - Re-ran E2E after the changes: Chromium and Firefox still clean.
+- Piping `report` to `head` panicked with a broken pipe; CLI output now ignores stdout write errors. Verified exit code 0 when piped.
 
 ## Still open
 - WebKit E2E: the browser binary exists but host libraries are missing; installing them requires root.
