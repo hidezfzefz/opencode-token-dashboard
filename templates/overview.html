@@ -34,14 +34,6 @@
 </div>
 
 <section class="card" style="margin-bottom:var(--space-5)">
-  <div class="card-head"><h2 class="card-title">Insights</h2></div>
-  <p class="stat-meta">{{ insight_spike }}</p>
-  <p class="stat-meta">{{ insight_busiest }}</p>
-  <p class="stat-meta">{{ insight_cache }}</p>
-  <p class="stat-meta">{{ insight_top_model }}</p>
-</section>
-
-<section class="card" style="margin-bottom:var(--space-5)">
   <div class="card-head">
     <h2 class="card-title">Daily usage</h2>
     <nav class="nav" aria-label="Chart range">
@@ -57,27 +49,6 @@
   {% endif %}
   <p class="stat-meta">Previous 7 days daily average: {{ seven_day_average }} tokens. Yesterday: {{ yesterday_total }} tokens. Fresh means input, output and reasoning.</p>
 </section>
-
-{% if cost_configured %}
-<section class="card" style="margin-bottom:var(--space-5)">
-  <div class="card-head">
-    <h2 class="card-title">Cost estimates</h2>
-    <strong class="stat-value" style="font-size:24px">{{ cost_total }}</strong>
-  </div>
-  <div class="table-wrap">
-    <table class="table">
-      <thead><tr><th scope="col">Model</th><th scope="col" class="num">Messages</th><th scope="col" class="num">Estimated cost</th></tr></thead>
-      <tbody>
-        {% for row in cost_rows %}
-        <tr><td class="ellipsis">{{ row.model }}</td><td class="num">{{ row.messages }}</td><td class="num">{{ row.total }}</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</section>
-{% else %}
-<p class="stat-meta">Cost estimates are off. Add a pricing.json to your config directory to enable them.</p>
-{% endif %}
 
 <section class="card" style="margin-bottom:var(--space-5)">
   <div class="card-head">

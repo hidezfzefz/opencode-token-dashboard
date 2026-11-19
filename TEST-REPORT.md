@@ -1,39 +1,28 @@
-# Test report — v2 API, web UI and native app
+# Test report
 
-Date: 2026-11-19.
+| Check | Result |
+|---|---|
+| `cargo fmt -- --check` | pass |
+| `cargo clippy --all-targets -- -D warnings` | pass, 0 warnings |
+| `cargo test` | 13 passed, 0 failed |
+| `cargo build --release` (Linux) | pass |
+| Native window launch on Linux | process stayed alive for the full timeout (no crash) |
+| `--web` mode after GUI changes | HTTP 200 on `/` |
+| Browser E2E (earlier, Chromium + Firefox) | 48 page loads, 0 failures, 0 console errors |
 
-## Results
+## Fixes during the GUI work
+1. egui 0.37 API changes: `App::ui` replaced `App::update`, themed style via `set_style_of`, `Rect::from_min_max`, progress-bar API.
+2. Clippy: boxed the large snapshot enum variant and used struct-update style initialization.
+3. Platform-aware default database paths for Windows and macOS.
+4. CI now builds and tests on Ubuntu, Windows and macOS and uploads each binary.
 
-| Check | Command / tool | Result |
-|---|---|---|
-| Format | `cargo fmt -- --check` | pass |
-| Lint | `cargo clippy --all-targets --all-features --locked -- -D warnings` | pass, 0 warnings |
-| Unit + integration tests | `cargo test` | 23 passed (7 endpoint integration tests) |
-| Release build | `cargo build --release` | pass |
-| Web E2E | `node legacy-nextjs/e2e-v2.mjs` | Chromium + Firefox: 48 page loads (4 pages × 6 widths), 0 failures, 0 console errors |
-| API smoke | Playwright `page.request` | 7 endpoints all 200, all JSON |
-| Lighthouse | in-app browser | accessibility **1.00**, best practices **1.00**, SEO **1.00**, 0 failures |
-| Design lint | hallmark sloplint on `static/style.css` + rendered page | 0 FAIL, 0 WARN, 1 waived (declared dark surface) |
-| Load test | 60 concurrent requests, 10 parallel, two busiest routes | 60/60 HTTP 200, average 2.45 s, max 5.4 s |
+## Auto sync verification
+- Database fingerprint changes when the underlying file changes: unit test passes.
+- Web mode emits `<meta http-equiv="refresh" content="15">` by default and no tag when `OTD_AUTO_REFRESH_SECONDS=0`.
+- Native window still launches with auto sync enabled; no crash.
+- Settings save/load round-trip tested; invalid intervals normalized to 1 second.
+- Web auto-refresh is absent on `/sessions?q=...` so typing in search is not interrupted.
 
-## Endpoint coverage
-Every `/api/v1` endpoint was tested against a real fixture database in-process: success, invalid settings values, unknown fields, malformed bodies, missing database error format, sorting/filtering fallbacks, health checks, and costs with no pricing file. There is no auth or rate limiting by design (localhost only); this is documented in SECURITY-REVIEW.md.
-
-## Bugs found and fixed during testing
-1. Tests needed `Content-Type: application/json` for PUT; the test helper was fixed and now sends it.
-2. The sessions fixture had only one session, so sort assertions were meaningless; a second session was added.
-3. The first E2E run counted expected `ERR_ABORTED` CSV downloads as failures; the check now ignores aborted `.csv` requests.
-4. Lighthouse scored accessibility 0.94 because of `<meta http-equiv="refresh">`. Replaced with a pause-aware JavaScript timer that stops while the tab is hidden or an input is focused; Lighthouse now scores 1.00 with no failures.
-5. Load testing showed ~4.18 s average response time. Added a fingerprint-based snapshot cache in `AppState`; unchanged database state now reuses the last snapshot (average dropped to ~2.45 s, and repeat single reads are effectively instant).
-6. Clippy flagged a complex cache type; extracted a `SnapshotCache` alias.
-
-## Post-pipeline improvements
-- Added an insights module (spike ratio, busiest day, cache share, top model) shown in both GUIs, with a unit test for spike labels.
-- Added headless `report` and `export` CLI commands; verified against the real database (`report` output correct, `export` wrote 54 session rows and 26 daily rows).
-- Re-ran E2E after the changes: Chromium and Firefox still clean.
-- Piping `report` to `head` panicked with a broken pipe; CLI output now ignores stdout write errors. Verified exit code 0 when piped.
-
-## Still open
-- WebKit E2E: the browser binary exists but host libraries are missing; installing them requires root.
-- Automated GUI screenshot testing in CI (needs a virtual display).
-- No hosted preview was used: this app reads a local database and is not deployable to a public host.
+## Open
+- Automated GUI screenshot testing (needs a virtual display in CI).
+- WebKit browser testing (needs root-level host libraries).

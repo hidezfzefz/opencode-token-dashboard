@@ -3,7 +3,6 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Settings {
     pub auto_sync_seconds: u64,
     pub all_days: bool,
@@ -19,10 +18,6 @@ impl Default for Settings {
 }
 
 impl Settings {
-    pub fn is_valid(&self) -> bool {
-        matches!(self.auto_sync_seconds, 0 | 1 | 5 | 15 | 60)
-    }
-
     pub fn normalized(mut self) -> Self {
         self.auto_sync_seconds = match self.auto_sync_seconds {
             0 | 1 | 5 | 15 | 60 => self.auto_sync_seconds,
@@ -78,20 +73,6 @@ pub fn config_path() -> PathBuf {
         .join(".config")
         .join("opencode-token-dashboard")
         .join("config.json")
-}
-
-pub fn pricing_path() -> PathBuf {
-    config_path()
-        .parent()
-        .map(|parent| parent.join("pricing.json"))
-        .unwrap_or_else(|| PathBuf::from("pricing.json"))
-}
-
-pub fn load_pricing_from(path: &Path) -> crate::cost::Pricing {
-    std::fs::read_to_string(path)
-        .ok()
-        .and_then(|content| serde_json::from_str::<crate::cost::Pricing>(&content).ok())
-        .unwrap_or_default()
 }
 
 pub fn load_from(path: &Path) -> Settings {

@@ -42,7 +42,6 @@ fn totals_from(counts: &Counts) -> Totals {
 }
 
 #[derive(Clone, Default, Serialize)]
-#[serde(rename_all = "camelCase")]
 pub struct Totals {
     pub input: i64,
     pub output: i64,
@@ -54,7 +53,6 @@ pub struct Totals {
 }
 
 #[derive(Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
 pub struct DayTotals {
     pub day: String,
     pub input: i64,
@@ -83,7 +81,6 @@ impl DayTotals {
 }
 
 #[derive(Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
 pub struct NamedTotals {
     pub key: String,
     pub label: String,
@@ -127,7 +124,6 @@ impl NamedTotals {
 }
 
 #[derive(Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
 pub struct SessionTotals {
     pub key: String,
     pub label: String,
@@ -158,7 +154,6 @@ impl SessionTotals {
 }
 
 #[derive(Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
 pub struct UsageSnapshot {
     pub db_path: String,
     pub message_count: usize,

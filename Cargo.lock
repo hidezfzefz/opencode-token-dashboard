@@ -2503,7 +2503,6 @@ dependencies = [
  "serde_json",
  "tera",
  "tokio",
- "tower",
 ]
 
 [[package]]

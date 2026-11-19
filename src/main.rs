@@ -1,8 +1,39 @@
+mod chart;
+mod csv;
+mod format;
+mod gui;
+mod settings;
+mod usage;
+mod web;
+
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use app::web::AppState;
-use opencode_token_dashboard as app;
+use tera::Tera;
+
+use web::AppState;
+
+fn templates() -> Tera {
+    let mut tera = Tera::default();
+    tera.add_raw_template("base.html", include_str!("../templates/base.html"))
+        .expect("base template");
+    tera.add_raw_template("overview.html", include_str!("../templates/overview.html"))
+        .expect("overview template");
+    tera.add_raw_template("sessions.html", include_str!("../templates/sessions.html"))
+        .expect("sessions template");
+    tera.add_raw_template("models.html", include_str!("../templates/models.html"))
+        .expect("models template");
+    tera.add_raw_template("projects.html", include_str!("../templates/projects.html"))
+        .expect("projects template");
+    tera.add_raw_template("error.html", include_str!("../templates/error.html"))
+        .expect("error template");
+    tera.add_raw_template(
+        "not_found.html",
+        include_str!("../templates/not_found.html"),
+    )
+    .expect("not found template");
+    tera
+}
 
 fn help() {
     println!("opencode-token-dashboard — native Rust dashboard for OpenCode token usage");
@@ -15,25 +46,15 @@ fn help() {
     println!("  --port <port>     Web server port (default 3000, or PORT env var)");
     println!("  --db-path <path>  OpenCode database (default ~/.local/share/opencode/opencode.db)");
     println!("                    or OPENCODE_DB_PATH env var");
-    println!("  report            Print a usage summary to the terminal");
-    println!("  export            Write sessions and daily CSV files (--out DIR)");
     println!("  -h, --help        Show this help");
 }
 
 #[tokio::main]
 async fn main() {
-    let all_args: Vec<String> = std::env::args().skip(1).collect();
-    if let Some(command) = all_args.first() {
-        match command.as_str() {
-            "report" => std::process::exit(app::cli::report(&all_args[1..])),
-            "export" => std::process::exit(app::cli::export(&all_args[1..])),
-            _ => {}
-        }
-    }
-    let mut args = all_args.into_iter();
+    let mut args = std::env::args().skip(1);
     let mut host = "127.0.0.1".to_string();
     let mut port: u16 = 3000;
-    let mut db_path = app::usage::default_db_path();
+    let mut db_path = usage::default_db_path();
     let mut web_mode = false;
 
     while let Some(arg) = args.next() {
@@ -73,35 +94,29 @@ async fn main() {
     }
 
     if !web_mode {
-        if let Err(error) = app::gui::run(db_path) {
+        if let Err(error) = gui::run(db_path) {
             eprintln!("Could not start the GUI: {error}");
             std::process::exit(1);
         }
         return;
     }
 
+    println!("Reading database: {}", db_path.display());
     let refresh_seconds = std::env::var("OTD_AUTO_REFRESH_SECONDS")
         .ok()
         .and_then(|value| value.parse().ok())
         .unwrap_or(15);
-    println!("Reading database: {}", db_path.display());
     let state = AppState {
-        tera: Arc::new(app::web::templates()),
+        tera: Arc::new(templates()),
         db_path,
         refresh_seconds,
-        pricing: app::settings::load_pricing_from(&app::settings::pricing_path()),
-        config_path: app::settings::config_path(),
-        cache: Arc::new(std::sync::Mutex::new(None)),
     };
-    if host != "127.0.0.1" && host != "localhost" && host != "::1" {
-        eprintln!("WARNING: binding to {host}. This API has no authentication; do not expose it on an untrusted network.");
-    }
-    let router = app::web::router(state);
+    let app = web::router(state);
     let address = format!("{host}:{port}");
     let listener = tokio::net::TcpListener::bind(&address)
         .await
         .unwrap_or_else(|error| panic!("Could not bind to {address}: {error}"));
 
     println!("Token usage web server listening on http://{address}");
-    axum::serve(listener, router).await.expect("Server failed");
+    axum::serve(listener, app).await.expect("Server failed");
 }

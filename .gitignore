@@ -1,10 +1,6 @@
 # Rust
 /target
 
-# Local environment / secrets
-.env
-.env.*
-
 # Archived Next.js implementation (kept for reference only)
 legacy-nextjs/node_modules/
 legacy-nextjs/.next/
