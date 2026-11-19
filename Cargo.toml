@@ -16,6 +16,9 @@ tera = "2"
 eframe = "0.37"
 egui = "0.37"
 
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
+
 [profile.release]
 opt-level = 2
 lto = true

@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Settings {
     pub auto_sync_seconds: u64,
     pub all_days: bool,
@@ -18,6 +19,10 @@ impl Default for Settings {
 }
 
 impl Settings {
+    pub fn is_valid(&self) -> bool {
+        matches!(self.auto_sync_seconds, 0 | 1 | 5 | 15 | 60)
+    }
+
     pub fn normalized(mut self) -> Self {
         self.auto_sync_seconds = match self.auto_sync_seconds {
             0 | 1 | 5 | 15 | 60 => self.auto_sync_seconds,

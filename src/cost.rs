@@ -2,6 +2,22 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ModelCost {
+    pub model: String,
+    pub messages: i64,
+    pub total_usd: f64,
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CostSummary {
+    pub rows: Vec<ModelCost>,
+    pub total_usd: f64,
+    pub configured: bool,
+}
+
 use crate::usage::UsageSnapshot;
 
 /// Prices are USD per one million tokens. The user supplies these; no prices
@@ -17,20 +33,6 @@ pub struct Rates {
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Pricing {
     pub models: HashMap<String, Rates>,
-}
-
-#[derive(Clone, Debug)]
-pub struct ModelCost {
-    pub model: String,
-    pub messages: i64,
-    pub total: f64,
-}
-
-#[derive(Clone, Debug)]
-pub struct CostSummary {
-    pub rows: Vec<ModelCost>,
-    pub total: f64,
-    pub configured: bool,
 }
 
 /// Resolve a model key against the pricing file. Accepts the full
@@ -81,12 +83,12 @@ pub fn estimate(snapshot: &UsageSnapshot, pricing: &Pricing) -> CostSummary {
         rows.push(ModelCost {
             model: model.label.clone(),
             messages: model.messages,
-            total: cost,
+            total_usd: cost,
         });
     }
     CostSummary {
         rows,
-        total,
+        total_usd: total,
         configured: !pricing.models.is_empty(),
     }
 }

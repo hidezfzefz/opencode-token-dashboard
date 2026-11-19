@@ -15,6 +15,7 @@ enum Tab {
     Sessions,
     Models,
     Projects,
+    Costs,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -69,6 +70,7 @@ const SORT_KEYS: [SortKey; 8] = [
 ];
 
 enum Data {
+    Loading,
     Ready(Box<UsageSnapshot>),
     Error(String),
 }
@@ -88,14 +90,18 @@ struct DashboardApp {
     last_check: Instant,
     last_fingerprint: Vec<(u64, u128)>,
     last_synced: Option<String>,
+    receiver: Option<std::sync::mpsc::Receiver<Result<UsageSnapshot, String>>>,
 }
 
 impl DashboardApp {
     fn new(db_path: PathBuf) -> Self {
-        let data = match usage::get_usage(&db_path) {
-            Ok(snapshot) => Data::Ready(Box::new(snapshot)),
-            Err(error) => Data::Error(error),
-        };
+        let (sender, receiver) = std::sync::mpsc::channel();
+        let load_path = db_path.clone();
+        std::thread::spawn(move || {
+            let result = usage::get_usage(&load_path);
+            let _ = sender.send(result);
+        });
+        let data = Data::Loading;
         let config_path = settings::config_path();
         let config = settings::load_from(&config_path);
         Self {
@@ -112,7 +118,36 @@ impl DashboardApp {
             config_path,
             last_check: Instant::now(),
             last_fingerprint: usage::db_fingerprint(&db_path),
-            last_synced: Some(now_label()),
+            last_synced: None,
+            receiver: Some(receiver),
+        }
+    }
+
+    fn poll_load(&mut self, ctx: &egui::Context) {
+        let Some(receiver) = self.receiver.as_ref() else {
+            return;
+        };
+        match receiver.try_recv() {
+            Ok(Ok(snapshot)) => {
+                self.data = Data::Ready(Box::new(snapshot));
+                self.last_fingerprint = usage::db_fingerprint(&self.db_path);
+                self.last_synced = Some(now_label());
+                self.receiver = None;
+                ctx.request_repaint();
+            }
+            Ok(Err(error)) => {
+                self.data = Data::Error(error);
+                self.receiver = None;
+                ctx.request_repaint();
+            }
+            Err(std::sync::mpsc::TryRecvError::Empty) => {
+                ctx.request_repaint_after(Duration::from_millis(100));
+            }
+            Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                self.data = Data::Error("Data loader stopped unexpectedly".to_string());
+                self.receiver = None;
+                ctx.request_repaint();
+            }
         }
     }
 
@@ -303,6 +338,8 @@ impl eframe::App for DashboardApp {
             self.styled = true;
         }
 
+        self.poll_load(&ctx);
+
         if self.sync_seconds > 0 {
             let now = Instant::now();
             if now.duration_since(self.last_check) >= Duration::from_secs(self.sync_seconds) {
@@ -369,6 +406,7 @@ impl eframe::App for DashboardApp {
                         (Tab::Sessions, "Sessions"),
                         (Tab::Models, "Models"),
                         (Tab::Projects, "Projects"),
+                        (Tab::Costs, "Costs"),
                     ] {
                         if ui.selectable_value(&mut self.tab, tab, label).clicked() {
                             self.notice = None;
@@ -378,6 +416,9 @@ impl eframe::App for DashboardApp {
                 ui.separator();
 
                 match &self.data {
+                    Data::Loading => {
+                        ui.label("Loading token usage from the database...");
+                    }
                     Data::Error(error) => {
                         ui.colored_label(
                             Color32::from_rgb(238, 138, 138),
@@ -393,6 +434,7 @@ impl eframe::App for DashboardApp {
                             Tab::Sessions => self.sessions(ui, &snapshot),
                             Tab::Models => self.models(ui, &snapshot),
                             Tab::Projects => self.projects(ui, &snapshot),
+                            Tab::Costs => self.costs(ui, &snapshot),
                         }
                     }
                 }
@@ -616,6 +658,37 @@ impl DashboardApp {
                     ui.end_row();
                 }
             });
+        });
+    }
+
+    fn costs(&mut self, ui: &mut egui::Ui, snapshot: &UsageSnapshot) {
+        let path = settings::pricing_path();
+        let pricing = settings::load_pricing_from(&path);
+        let summary = crate::cost::estimate(snapshot, &pricing);
+        ui.label(egui::RichText::new("Cost estimates").size(17.0));
+        if !summary.configured {
+            ui.label(
+                "No pricing configured. Add a pricing.json with rates in USD per million tokens:",
+            );
+            ui.code(format!("{}", path.display()));
+            ui.label(r#"Example: {"models":{"provider/model":{"input":2.0,"output":8.0,"cache_read":0.5,"cache_write":0.0}}}"#);
+            return;
+        }
+        ui.label(
+            egui::RichText::new(format!(
+                "Estimated total: {}",
+                crate::cost::format_money(summary.total_usd)
+            ))
+            .size(20.0),
+        );
+        egui::Grid::new("costs-grid").striped(true).show(ui, |ui| {
+            table_header(ui, &["Model", "Messages", "Estimated cost"]);
+            for row in &summary.rows {
+                ui.label(&row.model);
+                ui.label(format_number(row.messages));
+                ui.label(crate::cost::format_money(row.total_usd));
+                ui.end_row();
+            }
         });
     }
 

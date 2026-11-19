@@ -80,6 +80,7 @@ async fn main() {
         db_path,
         refresh_seconds,
         pricing: app::settings::load_pricing_from(&app::settings::pricing_path()),
+        config_path: app::settings::config_path(),
     };
     let router = app::web::router(state);
     let address = format!("{host}:{port}");
