@@ -12,7 +12,8 @@
 6. `PUT /api/v1/settings` — strict JSON body, 422 on invalid fields/values. Test: valid update persists; invalid returns 422 and does not change the file.
 7. GUI and web UI consume the same library functions (no duplicated aggregation).
 8. Non-blocking GUI startup: load data on a worker thread, show the window immediately.
-9. Security review, thorough tests, launch checklist, commit and push.
+9. Security review, thorough tests, launch checklist, commit and push. ✓
+10. Post-pipeline: usage insights in both GUIs and headless `report` / `export` commands for scripts and cron. ✓
 
 ## Cross-cutting rules
 - One data layer in `src/lib.rs`; GUI and web/API are thin frontends.

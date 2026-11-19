@@ -50,6 +50,17 @@ opencode-token-dashboard [--web] [--host ADDR] [--port PORT] [--db-path PATH]
 | `--port` | Web server port (default `3000`, or `PORT`) |
 | `--db-path` | Explicit database path (or `OPENCODE_DB_PATH`) |
 
+## Terminal commands
+
+For scripts and cron, the same data is available without opening a window:
+
+```sh
+opencode-token-dashboard report                       # human-readable summary
+opencode-token-dashboard export --out /tmp/exports    # sessions + daily CSV
+```
+
+Both accept `--db-path PATH`. `report` prints today, all-time, yesterday, the 7-day average, the busiest day and the top model. `export` writes `opencode-token-usage-sessions.csv` and `opencode-token-usage-daily.csv` into the chosen directory (created if needed).
+
 ## Local JSON API
 
 With `--web`, the same data is available as JSON under `/api/v1`:
@@ -86,7 +97,7 @@ If OpenCode stores its database somewhere else on your machine, set `OPENCODE_DB
 
 ## The native app
 
-- **Overview** — totals, yesterday and 7-day average, a custom-drawn chart, daily detail table, top sessions.
+- **Overview** — totals, an insights card (spike vs 7-day average, busiest day, cache share, top model), a custom-drawn chart, daily detail table, top sessions.
 - **Sessions** — live search, sortable columns, CSV export (saved to the current directory).
 - **Models / Projects** — usage tables with share bars.
 - **Costs** — estimates from your own `pricing.json`; hidden until you supply rates.

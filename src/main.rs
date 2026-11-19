@@ -15,12 +15,22 @@ fn help() {
     println!("  --port <port>     Web server port (default 3000, or PORT env var)");
     println!("  --db-path <path>  OpenCode database (default ~/.local/share/opencode/opencode.db)");
     println!("                    or OPENCODE_DB_PATH env var");
+    println!("  report            Print a usage summary to the terminal");
+    println!("  export            Write sessions and daily CSV files (--out DIR)");
     println!("  -h, --help        Show this help");
 }
 
 #[tokio::main]
 async fn main() {
-    let mut args = std::env::args().skip(1);
+    let all_args: Vec<String> = std::env::args().skip(1).collect();
+    if let Some(command) = all_args.first() {
+        match command.as_str() {
+            "report" => std::process::exit(app::cli::report(&all_args[1..])),
+            "export" => std::process::exit(app::cli::export(&all_args[1..])),
+            _ => {}
+        }
+    }
+    let mut args = all_args.into_iter();
     let mut host = "127.0.0.1".to_string();
     let mut port: u16 = 3000;
     let mut db_path = app::usage::default_db_path();

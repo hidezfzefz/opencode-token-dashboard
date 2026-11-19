@@ -478,6 +478,38 @@ impl DashboardApp {
         });
 
         ui.add_space(10.0);
+        let insights = crate::insights::compute(snapshot);
+        egui::Frame::new()
+            .fill(Color32::from_gray(16))
+            .stroke(Stroke::new(1.0, Color32::from_gray(38)))
+            .corner_radius(12.0)
+            .inner_margin(egui::Margin::same(14))
+            .show(ui, |ui| {
+                ui.label(egui::RichText::new("Insights").size(17.0));
+                ui.label(format!(
+                    "Today is {:.1}× the 7-day daily average — {}",
+                    insights.spike_ratio,
+                    crate::insights::spike_label(insights.spike_ratio)
+                ));
+                if let Some(day) = &insights.busiest_day {
+                    ui.label(format!(
+                        "Busiest day: {day} ({})",
+                        format_compact(insights.busiest_day_total)
+                    ));
+                }
+                ui.label(format!(
+                    "Cache reads make up {}% of all tokens",
+                    (insights.cache_ratio * 100.0).round() as i64
+                ));
+                if let Some(model) = &insights.top_model {
+                    ui.label(format!(
+                        "Top model: {model} ({}% of tokens)",
+                        (insights.top_model_share * 100.0).round() as i64
+                    ));
+                }
+            });
+
+        ui.add_space(10.0);
         ui.horizontal(|ui| {
             ui.label(egui::RichText::new("Daily usage").size(17.0));
             if ui

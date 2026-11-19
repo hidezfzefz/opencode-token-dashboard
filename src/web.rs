@@ -250,6 +250,42 @@ async fn overview(State(state): State<AppState>, Query(query): Query<OverviewQue
         "session_rows",
         &session_view(&snapshot.sessions[..snapshot.sessions.len().min(8)]),
     );
+    let insights = crate::insights::compute(&snapshot);
+    context.insert(
+        "insight_spike",
+        &format!(
+            "Today is {:.1}× the 7-day daily average — {}",
+            insights.spike_ratio,
+            crate::insights::spike_label(insights.spike_ratio)
+        ),
+    );
+    context.insert(
+        "insight_busiest",
+        &match &insights.busiest_day {
+            Some(day) => format!(
+                "Busiest day: {day} ({})",
+                format_compact(insights.busiest_day_total)
+            ),
+            None => "No daily data yet".to_string(),
+        },
+    );
+    context.insert(
+        "insight_cache",
+        &format!(
+            "Cache reads make up {}% of all tokens",
+            (insights.cache_ratio * 100.0).round() as i64
+        ),
+    );
+    context.insert(
+        "insight_top_model",
+        &match &insights.top_model {
+            Some(model) => format!(
+                "Top model: {model} ({}% of tokens)",
+                (insights.top_model_share * 100.0).round() as i64
+            ),
+            None => "No model data yet".to_string(),
+        },
+    );
     let costs = crate::cost::estimate(&snapshot, &state.pricing);
     let cost_rows: Vec<Value> = costs
         .rows

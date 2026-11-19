@@ -8,7 +8,7 @@ Date: 2026-11-19.
 |---|---|---|
 | Format | `cargo fmt -- --check` | pass |
 | Lint | `cargo clippy --all-targets --all-features --locked -- -D warnings` | pass, 0 warnings |
-| Unit + integration tests | `cargo test` | 22 passed (7 endpoint integration tests) |
+| Unit + integration tests | `cargo test` | 23 passed (7 endpoint integration tests) |
 | Release build | `cargo build --release` | pass |
 | Web E2E | `node legacy-nextjs/e2e-v2.mjs` | Chromium + Firefox: 48 page loads (4 pages × 6 widths), 0 failures, 0 console errors |
 | API smoke | Playwright `page.request` | 7 endpoints all 200, all JSON |
@@ -26,6 +26,11 @@ Every `/api/v1` endpoint was tested against a real fixture database in-process: 
 4. Lighthouse scored accessibility 0.94 because of `<meta http-equiv="refresh">`. Replaced with a pause-aware JavaScript timer that stops while the tab is hidden or an input is focused; Lighthouse now scores 1.00 with no failures.
 5. Load testing showed ~4.18 s average response time. Added a fingerprint-based snapshot cache in `AppState`; unchanged database state now reuses the last snapshot (average dropped to ~2.45 s, and repeat single reads are effectively instant).
 6. Clippy flagged a complex cache type; extracted a `SnapshotCache` alias.
+
+## Post-pipeline improvements
+- Added an insights module (spike ratio, busiest day, cache share, top model) shown in both GUIs, with a unit test for spike labels.
+- Added headless `report` and `export` CLI commands; verified against the real database (`report` output correct, `export` wrote 54 session rows and 26 daily rows).
+- Re-ran E2E after the changes: Chromium and Firefox still clean.
 
 ## Still open
 - WebKit E2E: the browser binary exists but host libraries are missing; installing them requires root.
