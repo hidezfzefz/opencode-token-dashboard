@@ -4,6 +4,8 @@ A **fully native Rust desktop app** for OpenCode token usage. It opens as a real
 
 A browser version is still available with the `--web` flag, but the default is the native GUI.
 
+There is also a **native Android Kotlin/Compose app** in [`android/`](android/README.md), built with 5 parallel subagents. It reads the same database read-only from app-private storage and offers the same four screens with auto sync and CSV export.
+
 The old Next.js implementation is archived in `legacy-nextjs/` for reference; it is not needed to build or run the app.
 
 ## Requirements

@@ -1,0 +1,17 @@
+# Local SDK path (machine-specific)
+/local.properties
+
+# Gradle
+/.gradle/
+/build/
+
+# IntelliJ / Android Studio
+*.iml
+/.idea/
+/captures/
+.externalNativeBuild/
+.cxx/
+
+# Keystores
+*.jks
+*.keystore

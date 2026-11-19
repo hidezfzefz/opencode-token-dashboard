@@ -1,0 +1,35 @@
+name: Android
+
+# Only run for changes that can actually affect the native app or this workflow,
+# so docs-only edits do not burn CI time on a Gradle build.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'android/**'
+      - '.github/workflows/android.yml'
+  pull_request:
+    paths:
+      - 'android/**'
+      - '.github/workflows/android.yml'
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Unit tests and debug APK
+        run: cd android && chmod +x gradlew && ./gradlew test assembleDebug
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: tokenusage-debug-apk
+          path: android/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
