@@ -12,6 +12,7 @@
 .externalNativeBuild/
 .cxx/
 
-# Keystores
+# Keystores (except the stable debug key used by CI)
 *.jks
 *.keystore
+!/keystore/debug.jks

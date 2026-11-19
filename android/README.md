@@ -79,6 +79,12 @@ Unsupported stored values are normalized back to the default on read, so a stale
 
 Auto sync is a coroutine watcher. On every tick it computes a cheap fingerprint — the length and last-modified time of `opencode.db` plus its `-wal` and `-shm` siblings — and only re-queries SQLite when that fingerprint changes. "Off" still performs one initial load, then stops watching. The **Refresh** button always forces a fresh load. Any load error is surfaced as a readable message in the UI instead of crashing the app.
 
+## Signing and updates
+
+CI builds are signed with the stable debug keystore committed at `keystore/debug.jks`, so every release has the same signature and normal updates work. `versionCode` is bumped for each release.
+
+Releases before v0.3.2 used a fresh runner-generated debug key. If you installed one of those, Android will refuse to update it over v0.3.2 with a "different signature" error — uninstall that old copy once, then install v0.3.2. From then on updates will install normally.
+
 ## Live tracking from the desktop app
 
 Android apps cannot read another app's private database. To follow live usage instead of pushing DB copies, run the Rust dashboard on the machine that has OpenCode and give the phone its LAN address:
