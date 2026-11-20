@@ -97,6 +97,18 @@ Enter `http://192.168.x.x:3000` in the **Desktop host** field. The app then poll
 
 The endpoint is read-only and unauthenticated. Only use this on a trusted LAN; do not expose the port to the internet. The manifest enables `INTERNET` and cleartext HTTP for this local LAN use.
 
+### Away from home
+
+To keep tracking when you leave the house, put both devices on a private VPN such as Tailscale:
+
+1. Join the PC and phone to the same tailnet.
+2. On the PC, find its Tailscale IP with `tailscale ip -4`.
+3. Start the dashboard bound to that address only:
+   `opencode-token-dashboard --web --host 100.64.0.5 --port 3000`
+4. Enter `http://100.64.0.5:3000` (or a MagicDNS name) in **Desktop host**.
+
+Do not port-forward the dashboard to the public internet — it has no authentication. The app also accepts `https://` URLs if you serve it behind a TLS terminator.
+
 ## CSV export
 
 Exports are written with no permission prompt and no Storage Access Framework picker, into the app's own external files directory:

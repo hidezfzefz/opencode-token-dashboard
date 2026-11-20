@@ -71,6 +71,22 @@ opencode-token-dashboard --web --host 0.0.0.0 --port 3000
 
 Then enter `http://<desktop-ip>:3000` in the **Desktop host** field of the Android app. It polls `GET /api/usage` on the same auto-sync interval. The endpoint is read-only and has no authentication — use it only on a trusted LAN, and keep the default `127.0.0.1` binding otherwise.
 
+## Tracking from away from home
+
+The phone app uses a plain HTTP endpoint with no authentication, so don't port-forward it to the internet. Use a private VPN instead (Tailscale or WireGuard):
+
+1. Install Tailscale on the PC and phone and join the same tailnet.
+2. Find the PC's Tailscale address: `tailscale ip -4` (for example `100.64.0.5`).
+3. Start the dashboard bound to that address only:
+
+```sh
+opencode-token-dashboard --web --host 100.64.0.5 --port 3000
+```
+
+4. In the Android app's **Desktop host** field enter `http://100.64.0.5:3000` (or a MagicDNS name like `http://my-pc:3000`).
+
+The phone now tracks usage from anywhere while the traffic stays inside your private tailnet. `https://` URLs are also accepted if you terminate TLS elsewhere. Keep the default `127.0.0.1` binding when you don't need remote access.
+
 ## Database location
 
 The app checks, in order:
