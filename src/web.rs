@@ -1,9 +1,9 @@
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use axum::body::Body;
 use axum::extract::{Query, Request, State};
-use axum::http::{header, HeaderValue, StatusCode};
+use axum::http::{header, HeaderMap, HeaderValue, StatusCode};
 use axum::middleware::{self, Next};
 use axum::response::{Html, IntoResponse, Response};
 use axum::routing::get;
@@ -19,11 +19,15 @@ use crate::csv;
 use crate::format::{format_compact, format_number, format_percent};
 use crate::usage::{self, SessionTotals, UsageSnapshot};
 
+type SnapshotCache = Arc<Mutex<Option<(Vec<(u64, u128)>, UsageSnapshot)>>>;
+
 #[derive(Clone)]
 pub struct AppState {
     pub tera: Arc<Tera>,
     pub db_path: PathBuf,
     pub refresh_seconds: i64,
+    pub api_token: Option<String>,
+    pub cache: SnapshotCache,
 }
 
 #[derive(Deserialize)]
@@ -95,11 +99,38 @@ fn error_response(state: &AppState, message: String) -> Response {
 }
 
 async fn load_usage(state: &AppState) -> Result<UsageSnapshot, String> {
+    let fingerprint = usage::db_fingerprint(&state.db_path);
+    if let Ok(cache) = state.cache.lock() {
+        if let Some((cached, snapshot)) = cache.as_ref() {
+            if *cached == fingerprint {
+                return Ok(snapshot.clone());
+            }
+        }
+    }
+
     let path = state.db_path.clone();
-    match tokio::task::spawn_blocking(move || usage::get_usage(&path)).await {
+    let result = match tokio::task::spawn_blocking(move || usage::get_usage(&path)).await {
         Ok(result) => result,
         Err(error) => Err(format!("Could not load usage: {error}")),
+    };
+
+    if let Ok(snapshot) = &result {
+        if let Ok(mut cache) = state.cache.lock() {
+            *cache = Some((fingerprint, snapshot.clone()));
+        }
     }
+    result
+}
+
+fn authorized(headers: &HeaderMap, expected: Option<&str>) -> bool {
+    let Some(token) = expected else {
+        return true;
+    };
+    headers
+        .get(header::AUTHORIZATION)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.strip_prefix("Bearer "))
+        .is_some_and(|value| value == token)
 }
 
 fn url_encode(value: &str) -> String {
@@ -519,7 +550,15 @@ fn json_error(status: StatusCode, code: &str, message: impl Into<String>) -> Res
         .into_response()
 }
 
-async fn api_usage(State(state): State<AppState>) -> Response {
+async fn api_usage(State(state): State<AppState>, headers: HeaderMap) -> Response {
+    let token = state.api_token.as_deref();
+    if !authorized(&headers, token) {
+        return json_error(
+            StatusCode::UNAUTHORIZED,
+            "unauthorized",
+            "A Bearer token is required for the usage API",
+        );
+    }
     match load_usage(&state).await {
         Ok(snapshot) => Json(snapshot).into_response(),
         Err(error) => json_error(StatusCode::INTERNAL_SERVER_ERROR, "database_error", error),
@@ -590,4 +629,26 @@ pub fn router(state: AppState) -> Router {
         .fallback(not_found)
         .layer(middleware::from_fn(security_headers))
         .with_state(state)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn token_check_allows_when_no_token_is_configured() {
+        assert!(authorized(&HeaderMap::new(), None));
+    }
+
+    #[test]
+    fn token_check_requires_exact_bearer_token() {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            header::AUTHORIZATION,
+            HeaderValue::from_static("Bearer secret"),
+        );
+        assert!(authorized(&headers, Some("secret")));
+        assert!(!authorized(&headers, Some("other")));
+        assert!(!authorized(&HeaderMap::new(), Some("secret")));
+    }
 }

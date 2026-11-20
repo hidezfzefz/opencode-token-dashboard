@@ -2,7 +2,7 @@
 
 ## Attack surface
 - Native GUI: local file reads only; no network listener unless `--web` is used.
-- `--web` now also serves a read-only `GET /api/usage` for the Android app. It has no authentication; the server binds to `127.0.0.1` by default and prints a warning when given a non-loopback host. LAN use is a deliberate, documented opt-in.
+- `--web` now also serves a read-only `GET /api/usage` for the Android app. It has no authentication by default; the server binds to `127.0.0.1` by default and prints a warning when given a non-loopback host. LAN use is a deliberate, documented opt-in. An optional `OTD_API_TOKEN` requires `Authorization: Bearer <token>` on that endpoint (401 with a JSON error otherwise); the Android app does not send it yet, so it must stay unset for phone use.
 - Optional web mode: four GET pages, two CSV downloads, one search form.
 - No auth, uploads, cookies, telemetry or secrets.
 

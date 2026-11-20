@@ -51,6 +51,8 @@ opencode-token-dashboard [--web] [--host ADDR] [--port PORT] [--db-path PATH]
 | `--host` | Web server bind address (default `127.0.0.1`) |
 | `--port` | Web server port (default `3000`, or `PORT`) |
 | `--db-path` | Explicit database path (or `OPENCODE_DB_PATH`) |
+| `--version` | Print the version |
+| `OTD_API_TOKEN` | Optional bearer token required by `GET /api/usage` |
 
 ## Auto sync
 
@@ -58,6 +60,8 @@ The dashboard keeps itself up to date with the OpenCode database:
 
 - **Native GUI:** watches the database, WAL and shared-memory files and reloads when they change. The **Auto sync** selector offers Off, 1, 5, 15 or 60 seconds; the **Last synced** label shows when it last read the database. The interval and the chart range are saved between runs. Settings live in `~/.config/opencode-token-dashboard/config.json` (platform-specific, overridable with `OTD_CONFIG_DIR`).
 - **Web mode:** pages reload every 15 seconds via a pause-aware timer that stops while the tab is hidden or a field is focused. Set `OTD_AUTO_REFRESH_SECONDS=0` to disable, or another number to change the interval. Auto-refresh is disabled on `/sessions` while a search or filter is active.
+
+Web requests reuse the last snapshot while the database files are unchanged (a fingerprint cache), so repeated API polls and page loads are fast.
 
 Manual **Refresh** is always available in both modes.
 
@@ -69,7 +73,7 @@ Android cannot read another app's private database, so the phone app connects to
 opencode-token-dashboard --web --host 0.0.0.0 --port 3000
 ```
 
-Then enter `http://<desktop-ip>:3000` in the **Desktop host** field of the Android app. It polls `GET /api/usage` on the same auto-sync interval. The endpoint is read-only and has no authentication — use it only on a trusted LAN, and keep the default `127.0.0.1` binding otherwise.
+Then enter `http://<desktop-ip>:3000` in the **Desktop host** field of the Android app. It polls `GET /api/usage` on the same auto-sync interval. The endpoint is read-only and has no authentication by default — use it only on a trusted LAN, and keep the default `127.0.0.1` binding otherwise. You can require a bearer token with `OTD_API_TOKEN=secret`, but the current Android app does not send one yet, so leave it unset when using the phone.
 
 ## Tracking from away from home
 

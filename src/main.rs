@@ -46,6 +46,7 @@ fn help() {
     println!("  --port <port>     Web server port (default 3000, or PORT env var)");
     println!("  --db-path <path>  OpenCode database (default ~/.local/share/opencode/opencode.db)");
     println!("                    or OPENCODE_DB_PATH env var");
+    println!("  --version         Print the version");
     println!("  -h, --help        Show this help");
 }
 
@@ -61,6 +62,10 @@ async fn main() {
         match arg.as_str() {
             "-h" | "--help" => {
                 help();
+                return;
+            }
+            "--version" => {
+                println!("opencode-token-dashboard {}", env!("CARGO_PKG_VERSION"));
                 return;
             }
             "--web" => web_mode = true,
@@ -106,10 +111,18 @@ async fn main() {
         .ok()
         .and_then(|value| value.parse().ok())
         .unwrap_or(15);
+    let api_token = std::env::var("OTD_API_TOKEN")
+        .ok()
+        .filter(|value| !value.is_empty());
+    if api_token.is_some() {
+        eprintln!("OTD_API_TOKEN is set: the usage API now requires Authorization: Bearer <token>");
+    }
     let state = AppState {
         tera: Arc::new(templates()),
         db_path,
         refresh_seconds,
+        api_token,
+        cache: Arc::new(std::sync::Mutex::new(None)),
     };
     let app = web::router(state);
     let address = format!("{host}:{port}");
